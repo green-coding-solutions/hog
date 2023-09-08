@@ -1,0 +1,678 @@
+//
+//  DetailView.swift
+//  hog
+//
+//  Created by Didi Hoffmann on 31.08.23.
+//
+
+import SwiftUI
+import SQLite3
+import Charts
+import AppKit
+
+public func isScriptRunning(scriptName: String) -> Bool {
+    let process = Process()
+    let outputPipe = Pipe()
+    
+    process.launchPath = "/usr/bin/env"
+    process.arguments = ["pgrep", "-f", scriptName]
+    process.standardOutput = outputPipe
+    
+    do {
+        try process.run()
+        process.waitUntilExit()
+        
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        if let output = String(data: outputData, encoding: .utf8), !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+    } catch {
+        print("An error occurred: \(error)")
+    }
+    
+    return false
+}
+
+public func getNameByAppName(appName: String) -> String {
+    let runningApps = NSWorkspace.shared.runningApplications
+    for app in runningApps {
+        if app.bundleIdentifier == appName {
+            return app.localizedName ?? "No Data"
+        }
+    }
+    
+    let components = appName.split(separator: ".")
+    if let lastComponent = components.last {
+        return String(lastComponent)
+    }
+    
+    return "No Data"
+}
+
+public func getIconByAppName(appName: String) -> NSImage? {
+    let runningApps = NSWorkspace.shared.runningApplications
+    for app in runningApps {
+        if app.bundleIdentifier == appName {
+            return app.icon
+        }
+    }
+    return NSImage(systemSymbolName: "terminal", accessibilityDescription: nil)
+}
+
+func getMachineId() -> String{
+    var db: OpaquePointer?
+    var machineId = ""
+    let fileManager = FileManager.default
+    let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
+    
+    if let dir = appSupportDir {
+        let fileURL = dir.appendingPathComponent("db.db")
+        
+        if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
+            print("error opening database")
+            return ""
+        }
+    } else {
+        print("Directory not found")
+        return ""
+    }
+
+    var queryStatement: OpaquePointer?
+    let queryString = "SELECT machine_id FROM settings LIMIT 1"
+
+    if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
+        while sqlite3_step(queryStatement) == SQLITE_ROW {
+            let queryResultCol1 = sqlite3_column_text(queryStatement, 0)
+            machineId = String(cString: queryResultCol1!)
+            print("Machine ID: \(machineId)")
+        }
+    } else {
+        let errorMessage = String(cString: sqlite3_errmsg(db))
+        print("Query could not be prepared! \(errorMessage)")
+    }
+
+    sqlite3_finalize(queryStatement)
+    sqlite3_close(db)
+    
+    return machineId
+}
+
+func checkDB() -> Bool {
+    let fileManager = FileManager.default
+    guard let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog") else {
+        print("Directory not found")
+        return false
+    }
+
+    let fileURL = appSupportDir.appendingPathComponent("db.db")
+
+    return fileManager.fileExists(atPath: fileURL.path)
+}
+
+
+class ValueManager: ObservableObject {
+    var lookBackTime:Int = 0
+
+    @Published var energy: CGFloat = 0
+    @Published var providerRunning: Bool = false
+    @Published var topApp: String = "Loading..."
+    @Published var isLoading: Bool = false
+
+    enum ValueType {
+        case float
+        case string
+    }
+
+    public func refreshData(lookBackTime: Int = 0) -> Void{
+        self.isLoading = true
+        self.lookBackTime = lookBackTime
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.loadDataFrom()
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
+    }
+
+    func loadDataFrom() {
+        var db: OpaquePointer?
+
+        let fileManager = FileManager.default
+        let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
+        
+        if let dir = appSupportDir {
+            let fileURL = dir.appendingPathComponent("db.db")
+            
+            if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
+                print("error opening database")
+                return
+            }
+        } else {
+            print("Directory not found")
+            return
+        }
+        
+        var newEnergy: CGFloat = 0
+        var energyQuery:String
+        if self.lookBackTime == 0 {
+            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements;"
+        }else{
+            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
+        }
+        if let result: CGFloat = queryDatabase(db: db, query:energyQuery, type: .float) {
+            newEnergy = result
+        }
+
+
+        var newTopApp: String = "Loading"
+        var topQuery:String
+
+        if self.lookBackTime == 0 {
+            topQuery = """
+                SELECT name
+                FROM top_processes
+                GROUP BY name
+                ORDER BY SUM(energy_impact) DESC
+                LIMIT 1; -- to get only the top name
+                """
+        }else{
+            topQuery = """
+                SELECT name
+                FROM top_processes
+                WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime))
+                GROUP BY name
+                ORDER BY SUM(energy_impact) DESC
+                LIMIT 1; -- to get only the top name
+                """
+        }
+        
+        if let result: String = queryDatabase(db: db, query:topQuery, type: .string) {
+            newTopApp = String(result)
+        } else {
+            newTopApp = "No data"
+        }
+
+
+
+        DispatchQueue.main.async {
+            self.energy = newEnergy
+            self.providerRunning = isScriptRunning(scriptName: "power_logger_all.py")
+            self.topApp = newTopApp
+        }
+
+        sqlite3_close(db)
+
+    }
+
+
+    private func queryDatabase<T>(db: OpaquePointer?, query: String, type: ValueType) -> T? {
+        var queryStatement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, query, -1, &queryStatement, nil) == SQLITE_OK {
+            if sqlite3_step(queryStatement) == SQLITE_ROW {
+                switch type {
+                case .float:
+                    let value = CGFloat(sqlite3_column_double(queryStatement, 0))
+                    sqlite3_finalize(queryStatement)
+                    return value as? T
+                case .string:
+                    if let cString = sqlite3_column_text(queryStatement, 0) {
+                        let value = String(cString: cString)
+                        sqlite3_finalize(queryStatement)
+                        return value as? T
+                    }
+                }
+            }
+        }
+        sqlite3_finalize(queryStatement)
+        return nil
+    }
+}
+struct TopProcess: Codable, Identifiable {
+    let id: UUID = UUID()  // Add this line if you want a unique identifier
+    let name: String
+    let energy_impact: Double
+    let cputime_ns: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case name, energy_impact, cputime_ns
+    }
+}
+
+class TopProcessData: ObservableObject, RandomAccessCollection {
+    var lookBackTime:Int = 0
+    typealias Element = TopProcess
+    typealias Index = Array<TopProcess>.Index
+
+    @Published var lines: [TopProcess] = []
+
+    var startIndex: Index { lines.startIndex }
+    var endIndex: Index { lines.endIndex }
+
+    @Published var isLoading: Bool = false
+    
+    subscript(position: Index) -> Element {
+        lines[position]
+    }
+    
+    public func refreshData(lookBackTime: Int = 0) -> Void{
+        self.isLoading = true
+        self.lookBackTime = lookBackTime
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.loadDataFrom()
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
+    }
+
+
+    private func loadDataFrom() {
+        
+         var db: OpaquePointer? // SQLite database object
+        
+
+         let fileManager = FileManager.default
+         let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
+         
+         if let dir = appSupportDir {
+             let fileURL = dir.appendingPathComponent("db.db")
+             
+             if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
+                 print("error opening database")
+                 return
+             }
+         } else {
+             print("Directory not found")
+             return
+         }
+        
+        var queryStatement: OpaquePointer?
+        
+        let queryString: String
+        if self.lookBackTime == 0 {
+            queryString = """
+                SELECT name, SUM(energy_impact), SUM(cputime_ns)
+                FROM top_processes
+                GROUP BY name
+                ORDER BY SUM(energy_impact) DESC
+                LIMIT 50;
+
+                """
+        } else {
+            queryString = """
+                SELECT name, SUM(energy_impact), SUM(cputime_ns)
+                FROM top_processes
+                WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime))
+                GROUP BY name
+                ORDER BY SUM(energy_impact) DESC
+                LIMIT 50;
+            """
+        }
+        if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
+            var newLines: [TopProcess] = []
+            while sqlite3_step(queryStatement) == SQLITE_ROW {
+                var name: String = ""
+                if let namePointer = sqlite3_column_text(queryStatement, 0) {
+                    name = String(cString: namePointer)
+                }
+                let energy_impact = sqlite3_column_double(queryStatement, 1)
+                let cputime_ns = sqlite3_column_int64(queryStatement, 2)
+                
+                newLines.append(TopProcess(name: name, energy_impact: energy_impact, cputime_ns: cputime_ns))
+            }
+            DispatchQueue.main.async {
+                self.lines = newLines
+            }
+        }
+
+        sqlite3_finalize(queryStatement)
+        sqlite3_close(db)
+    }
+}
+
+
+
+
+struct DataPoint: Codable, Identifiable {
+    let id: Double
+    let combined_energy: Double
+    let cpu_energy: Double
+    let gpu_energy: Double
+    let ane_energy: Double
+    var time: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, combined_energy, cpu_energy, gpu_energy, ane_energy
+    }
+}
+
+class ChartData: ObservableObject, RandomAccessCollection {
+    var lookBackTime:Int = 0
+    typealias Element = DataPoint
+    typealias Index = Array<DataPoint>.Index
+
+    @Published var points: [DataPoint] = []
+
+    var startIndex: Index { points.startIndex }
+    var endIndex: Index { points.endIndex }
+
+    @Published var isLoading: Bool = false
+    
+    subscript(position: Index) -> Element {
+        points[position]
+    }
+    
+    public func refreshData(lookBackTime: Int = 0) -> Void{
+        self.isLoading = true
+        self.lookBackTime = lookBackTime
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.loadDataFrom()
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
+    }
+
+    private func loadDataFrom() {
+        
+         var db: OpaquePointer? // SQLite database object
+        
+
+         let fileManager = FileManager.default
+         let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
+         
+         if let dir = appSupportDir {
+             let fileURL = dir.appendingPathComponent("db.db")
+             
+             if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
+                 print("error opening database")
+                 return
+             }
+         } else {
+             print("Directory not found")
+             return
+         }
+        
+        var queryStatement: OpaquePointer?
+        
+        let queryString: String
+        if self.lookBackTime == 0 {
+            queryString = "SELECT * FROM power_measurements;"
+        } else {
+            queryString = "SELECT * FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
+        }
+        if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
+            var newPoints: [DataPoint] = []
+            while sqlite3_step(queryStatement) == SQLITE_ROW {
+                let id = sqlite3_column_double(queryStatement, 0)
+                let combined_energy = sqlite3_column_double(queryStatement, 2)
+                let cpu_energy = sqlite3_column_double(queryStatement, 3)
+                let gpu_energy = sqlite3_column_double(queryStatement, 4)
+                let ane_energy = sqlite3_column_double(queryStatement, 5)
+                let time = Date(timeIntervalSince1970: id / 1000.0)
+
+                let dataPoint = DataPoint(id: id, combined_energy: combined_energy, cpu_energy: cpu_energy, gpu_energy: gpu_energy, ane_energy: ane_energy, time: time)
+                
+                newPoints.append(dataPoint)
+            }
+            DispatchQueue.main.async {
+                self.points = newPoints
+            }
+        }
+
+        sqlite3_finalize(queryStatement)
+        sqlite3_close(db)
+    }
+}
+
+
+struct PointsGraph: View {
+    @ObservedObject var chartData: ChartData
+    
+    init(chartData: ChartData) {
+        self.chartData = chartData
+    }
+
+    var body: some View {
+        if chartData.isLoading {
+            ProgressView("Loading...")
+                .scaleEffect(1.5, anchor: .center)
+                .progressViewStyle(CircularProgressViewStyle(tint: Color.blue))
+                .padding()
+        } else {
+            VStack {
+                if chartData.isEmpty {
+                    Text("No Data! Please enable provider app.").font(.largeTitle)
+                }else{
+                    Chart(chartData) {
+                        PointMark(
+                            x: .value("Time", $0.time!),
+                            y: .value("Energy", $0.combined_energy)
+                        )
+                    }
+                    .chartYAxisLabel("mJ")
+                    .chartXAxisLabel("Time")
+                }
+            }
+        }
+    }
+}
+
+struct TopProcessTable: View {
+    @ObservedObject var tpData: TopProcessData
+
+    init(tpData: TopProcessData) {
+        self.tpData = tpData
+    }
+
+    var body: some View {
+        if tpData.isLoading {
+            ProgressView("Loading...")
+                .scaleEffect(1.5, anchor: .center)
+                .progressViewStyle(CircularProgressViewStyle(tint: Color.blue))
+                .padding()
+        } else {
+            if tpData.isEmpty {
+            } else {
+                Table(tpData) {
+                    TableColumn(""){ line in
+                        Image(nsImage: getIconByAppName(appName: line.name) ?? NSImage())
+                            .resizable()
+                            .frame(width: 15, height: 15)
+                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        
+                    }.width(20)
+                    
+                    TableColumn("Name", value: \.name)
+                    TableColumn("Energy Impact"){ line in
+                        Text(String(format: "%.2f", line.energy_impact))
+                    }
+                    TableColumn("CPU time"){ line in
+                        Text(String(line.cputime_ns))
+                    }
+                }
+                .padding()
+                .tableStyle(.bordered(alternatesRowBackgrounds: true))
+
+            }
+
+        }
+    }
+}
+
+
+struct DataView: View {
+    
+    @State var chartData = ChartData()
+    @State var lineData = TopProcessData()
+    @ObservedObject var valueManager = ValueManager()
+    @State private var isHovering = false
+
+    var lookBackTime: Int
+
+    
+    init(lookBackTime: Int = 0) {
+        self.lookBackTime = lookBackTime
+    }
+    
+    var body: some View {
+        VStack{
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("This is a minimalistic overview of your energy usage and the apps that are using the most resources.")
+
+                }
+                
+                Spacer(minLength: 10)
+                Button("Detailed analytics") {
+                    if let url = URL(string: "https://metrics.green-coding.berlin/hog.html?machine_id=\(getMachineId())") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Button(action: {
+                    self.chartData.refreshData(lookBackTime: self.lookBackTime)
+                    self.lineData.refreshData(lookBackTime: self.lookBackTime)
+                    self.valueManager.refreshData(lookBackTime: self.lookBackTime)
+                }) {
+                    Image(systemName: "goforward")
+                }
+                Button(action: {
+                    exit(0)
+                }) {
+                    Image(systemName: "x.circle")
+                }
+
+            }
+            VStack{
+                
+                VStack(spacing: 0) {
+                    ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
+                    EnergyBadge(title: "Sysmte energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy, unit: "mJ")
+                    if valueManager.providerRunning {
+                        TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "Provider App running")
+                    } else {
+                        HStack{
+                            TextBadge(title: "", color: Color("red"), image: "exclamationmark.octagon", value: "Provider App is not running")
+                            Link(destination: URL(string: "https://www.example.com/TOS.html")!) {
+                                Image(systemName: "questionmark.circle.fill")
+                                    .font(.system(size: 24))
+                            }
+                        }
+                    }
+
+                }
+
+                PointsGraph(chartData: chartData)
+                TopProcessTable(tpData: lineData)
+                
+            }
+            .onAppear {
+                self.chartData.refreshData(lookBackTime: self.lookBackTime)
+                self.lineData.refreshData(lookBackTime: self.lookBackTime)
+                self.valueManager.refreshData(lookBackTime: self.lookBackTime)
+            }
+            
+        }.padding()
+    }
+}
+
+
+@ViewBuilder
+func ProcessBadge(title: String, color: Color, process: String)->some View {
+    HStack {
+        Image(nsImage: getIconByAppName(appName: process) ?? NSImage())
+            .font(.title2)
+            .foregroundColor(color)
+            .padding(10)
+        
+        Text(getNameByAppName(appName: process))
+            .font(.title2.bold())
+
+        Text(title)
+            .font(.caption2.bold())
+            .foregroundColor(.gray)
+
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+}
+
+@ViewBuilder
+func EnergyBadge(title: String, color: Color, image: String, value: CGFloat, unit: String)->some View {
+    HStack {
+        Image(systemName: image)
+            .font(.title2)
+            .foregroundColor(color)
+            .padding(10)
+        
+            Text(String(format: "%.1f %@", value  / 1000, unit))
+                .font(.title2.bold())
+
+            Text(title)
+                .font(.caption2.bold())
+                .foregroundColor(.gray)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+}
+
+@ViewBuilder
+func TextBadge(title: String, color: Color, image: String, value: String)->some View {
+    HStack {
+        Image(systemName: image)
+            .font(.title2)
+            .foregroundColor(color)
+            .padding(10)
+        
+            Text(value)
+                .font(.title2.bold())
+
+            Text(title)
+                .font(.caption2.bold())
+                .foregroundColor(.gray)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+}
+
+
+struct DetailView: View {
+    
+    @State private var renderToggle = false
+
+    var body: some View {
+        if checkDB(){
+            TabView {
+                DataView(lookBackTime: 300000)
+                    .tabItem {
+                        Label("last 5 minutes", systemImage: "list.dash")
+                    }
+                
+                DataView(lookBackTime: 86400000)
+                    .tabItem {
+                        Label("last 24 hours", systemImage: "square.and.pencil")
+                    }
+                DataView()
+                    .tabItem {
+                        Label("all time", systemImage: "square.and.pencil")
+                    }
+                
+            }.padding()
+        } else {
+            Text("Please run the power logger script first! See https://github.com/green-coding-berlin/hog for detailed install instructions.")
+            Button("Re-check") {
+                renderToggle.toggle()
+            }
+
+        }
+
+    }
+}
+
+struct DetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        DetailView().fixedSize()
+
+    }
+}

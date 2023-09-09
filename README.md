@@ -67,5 +67,5 @@ The hog desktop app gives you analytics of the data that was recorded.
 All data is saved in an sqlite database that is located under:
 
 ```bash
-~/Library/Application Support/gcb_hog/db.db
+/Library/Application Support/berlin.green-coding.hog/db.db
 ```

@@ -7,7 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/didi/code/hog/power_logger.py</string>
+        <string>python3 /Users/didi/code/hog/power_logger.py</string>
     </array>
 
     <key>RunAtLoad</key>

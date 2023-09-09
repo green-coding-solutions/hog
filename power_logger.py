@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import subprocess
 import time
@@ -10,6 +12,9 @@ import xml
 import signal
 import sys
 import uuid
+import os
+import stat
+
 
 from datetime import timezone
 from queue import Queue
@@ -24,7 +29,7 @@ stats = {
     'combined_power':0
 }
 
-def sigint_handler(signum, frame):
+def sigint_handler(_, __):
     global stop_signal
     if stop_signal:
         # If you press CTR-C the second time we bail
@@ -33,22 +38,23 @@ def sigint_handler(signum, frame):
     stop_signal = True
     print("Received stop signal. Terminating all processes.")
 
-def siginfo_handler(signum, frame):
+def siginfo_handler(_, __):
     print(stats)
 
 signal.signal(signal.SIGINT, sigint_handler)
+signal.signal(signal.SIGTERM, sigint_handler)
+
 signal.signal(signal.SIGINFO, siginfo_handler)
 
 
-APP_NAME = "gcb_hog"
-app_support_path = Path.home() / 'Library' / 'Application Support' / APP_NAME
+APP_NAME = "berlin.green-coding.hog"
+app_support_path = Path(f"/Library/Application Support/{APP_NAME}")
 app_support_path.mkdir(parents=True, exist_ok=True)
 
 DATABASE_FILE = app_support_path / 'db.db'
 
 SETTINGS = {
-    'powermetrics' : 2100,
-    'loop_sleep': 300,
+    'powermetrics' : 5000,
 }
 
 conn = sqlite3.connect(DATABASE_FILE)
@@ -70,13 +76,14 @@ c.execute('''CREATE TABLE IF NOT EXISTS settings
 conn.commit()
 
 
-def run_powermetrics(queue, stop_signal):
+def run_powermetrics(debug: bool):
 
     # We ignore stderr here as powermetrics is quite verbose on stderr and the buffer fills up quite fast
     cmd = ['powermetrics',
            '--show-all',
            '-i', str(SETTINGS['powermetrics']),
            '-f', 'plist']
+
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
 
     buffer = []
@@ -86,15 +93,20 @@ def run_powermetrics(queue, stop_signal):
         buffer.append(line)
         if line == '</plist>':
             # We only add the data to the queue once it is complete to avoid race conditions
-            queue.put(''.join(buffer))
+            parse_powermetrics_output(''.join(buffer))
+
+            if debug:
+                print(stats)
+                sys.stdout.flush()
+
             buffer = []
 
         if stop_signal:
             process.terminate()  # or process.kill()
             break
 
-def find_top_processes(data):
-    # As iterm will probably show up as it spawns the processes called from the shall we look at the tasks
+def find_top_processes(data: list):
+    # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
     new_data = []
     for coalition in data:
         if coalition['name'] == 'com.googlecode.iterm2' or coalition['name'].strip() == '':
@@ -110,7 +122,7 @@ def find_top_processes(data):
         }
 
 
-def parse_powermetrics_output(output):
+def parse_powermetrics_output(output: str):
     global stats
 
     for data in output.encode('utf-8').split(b'\x00'):
@@ -150,36 +162,25 @@ def parse_powermetrics_output(output):
             conn.commit()
 
 
-def main(debug=False):
-    output_queue = Queue()
-
-    # Start powermetrics in a separate thread
-    powermetrics_thread = threading.Thread(target=run_powermetrics, args=(output_queue, stop_signal))
-    powermetrics_thread.daemon = True
-    powermetrics_thread.start()
-
-
-    while True:
-        time.sleep(SETTINGS['loop_sleep'])
-        while not output_queue.empty():
-            parse_powermetrics_output(output_queue.get())
-
-        if debug:
-            print(stats)
-
-        if stop_signal:
-            powermetrics_thread.join()
-            break
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=
                                      """A powermetrics wrapper that does simple parsing and writes to a file.""")
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
     args = parser.parse_args()
+
     if args.debug:
-        SETTINGS = { 'powermetrics' : 2100, 'loop_sleep': 2 }
+        SETTINGS = { 'powermetrics' : 1000 }
+
+    if os.geteuid() != 0:
+        print("The script needs to be run as root!")
+        sys.exit()
+
+    # Make sure that everyone can write to the DB
+    os.chmod(DATABASE_FILE, stat.S_IRUSR | stat.S_IWUSR |
+                stat.S_IRGRP | stat.S_IWGRP |
+                stat.S_IROTH | stat.S_IWOTH)
+
 
     c.execute("SELECT machine_id FROM settings LIMIT 1")
     result = c.fetchone()
@@ -188,6 +189,6 @@ if __name__ == '__main__':
         c.execute("INSERT INTO settings (machine_id) VALUES (?)", (str(uuid.uuid1()),))
         conn.commit()
 
-    main(args.debug)
+    run_powermetrics(args.debug)
 
     c.close()

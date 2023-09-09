@@ -17,37 +17,45 @@ give some statistics. You can either call it by hand and send it to the backgrou
 For development purposes we recommend to always first run the program in the foreground and see if everything works fine
 and then use the launch agent.
 
+**IMPORTANT**:
+
 ### Launch agent (still needs work)
 
-Please modify the `hog.green-coding.berlin.plist` file to reference the right path.
+Make the `power_logger.py` script executable with `chmod a+x power_logger.py`
 
-Place the .plist file in the `/Library/LaunchAgents/` (`sudo mv hog.green-coding.berlin.plist /Library/LaunchAgents/ `)
-directory. For security reasons, files in /Library/LaunchDaemons/ should have their permissions set to be owned by root:wheel
+Please modify the `berlin.green-coding.hog.plist` file to reference the right path. There is a script below that does
+everything for you.
+
+Place the .plist file in the `/Library/LaunchDaemons` directory.
+For security reasons, files in /Library/LaunchDaemons/ should have their permissions set to be owned by root:wheel
 and should not be writable by others.
 
 ```bash
-sudo chown root:wheel /Library/LaunchDaemons/hog.green-coding.berlin.plist
-sudo chmod 644 /Library/LaunchDaemons/hog.green-coding.berlin.plist
+sed -i.bak "s|PATH_PLASE_CHANGE|$(pwd)|g" berlin.green-coding.hog.plist
+sudo cp berlin.green-coding.hog.plist /Library/LaunchDaemons/
+
+sudo chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sudo chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist
 
 ```
 
 After placing the .plist file in the right directory, you need to tell launchd to load the new configuration:
 
 ```bash
-sudo launchctl load /Library/LaunchAgents/hog.green-coding.berlin.plist
+sudo launchctl load /Library/LaunchDaemons/berlin.green-coding.hog.plist
 ```
 
 You can check if your service is loaded with:
 
 ```bash
-sudo launchctl list | grep hog.green-coding.berlin.plist
+sudo launchctl list | grep berlin.green-coding.hog
 ```
 
 If you want to unload or stop the service:
 
 ```bash
 
-sudo launchctl unload /Library/LaunchAgents/hog.green-coding.berlin.plist
+sudo launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
 ```
 
 ## The desktop App

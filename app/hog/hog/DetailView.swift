@@ -10,6 +10,8 @@ import SQLite3
 import Charts
 import AppKit
 
+let DB_PATH = "/Library/Application Support/berlin.green-coding.hog/db.db"
+
 public func isScriptRunning(scriptName: String) -> Bool {
     let process = Process()
     let outputPipe = Pipe()
@@ -62,18 +64,9 @@ public func getIconByAppName(appName: String) -> NSImage? {
 func getMachineId() -> String{
     var db: OpaquePointer?
     var machineId = ""
-    let fileManager = FileManager.default
-    let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
-    
-    if let dir = appSupportDir {
-        let fileURL = dir.appendingPathComponent("db.db")
         
-        if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
-            print("error opening database")
-            return ""
-        }
-    } else {
-        print("Directory not found")
+    if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+        print("error opening database")
         return ""
     }
 
@@ -99,14 +92,7 @@ func getMachineId() -> String{
 
 func checkDB() -> Bool {
     let fileManager = FileManager.default
-    guard let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog") else {
-        print("Directory not found")
-        return false
-    }
-
-    let fileURL = appSupportDir.appendingPathComponent("db.db")
-
-    return fileManager.fileExists(atPath: fileURL.path)
+    return fileManager.fileExists(atPath: DB_PATH)
 }
 
 
@@ -138,18 +124,9 @@ class ValueManager: ObservableObject {
     func loadDataFrom() {
         var db: OpaquePointer?
 
-        let fileManager = FileManager.default
-        let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
-        
-        if let dir = appSupportDir {
-            let fileURL = dir.appendingPathComponent("db.db")
             
-            if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
-                print("error opening database")
-                return
-            }
-        } else {
-            print("Directory not found")
+        if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+            print("error opening database")
             return
         }
         
@@ -193,11 +170,9 @@ class ValueManager: ObservableObject {
             newTopApp = "No data"
         }
 
-
-
         DispatchQueue.main.async {
             self.energy = newEnergy
-            self.providerRunning = isScriptRunning(scriptName: "power_logger_all.py")
+            self.providerRunning = isScriptRunning(scriptName: "power_logger.py")
             self.topApp = newTopApp
         }
 
@@ -270,24 +245,13 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
 
     private func loadDataFrom() {
         
-         var db: OpaquePointer? // SQLite database object
+         var db: OpaquePointer?
         
-
-         let fileManager = FileManager.default
-         let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
-         
-         if let dir = appSupportDir {
-             let fileURL = dir.appendingPathComponent("db.db")
-             
-             if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
-                 print("error opening database")
-                 return
-             }
-         } else {
-             print("Directory not found")
+         if sqlite3_open(DB_PATH, &db) != SQLITE_OK {
+             print("error opening database")
              return
          }
-        
+
         var queryStatement: OpaquePointer?
         
         let queryString: String
@@ -380,22 +344,11 @@ class ChartData: ObservableObject, RandomAccessCollection {
         
          var db: OpaquePointer? // SQLite database object
         
-
-         let fileManager = FileManager.default
-         let appSupportDir = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("gcb_hog")
-         
-         if let dir = appSupportDir {
-             let fileURL = dir.appendingPathComponent("db.db")
-             
-             if sqlite3_open(fileURL.path, &db) != SQLITE_OK { // Open database
-                 print("error opening database")
-                 return
-             }
-         } else {
-             print("Directory not found")
+        if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+             print("error opening database")
              return
          }
-        
+
         var queryStatement: OpaquePointer?
         
         let queryString: String
@@ -524,7 +477,6 @@ struct DataView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("This is a minimalistic overview of your energy usage and the apps that are using the most resources.")
-
                 }
                 
                 Spacer(minLength: 10)
@@ -551,13 +503,13 @@ struct DataView: View {
                 
                 VStack(spacing: 0) {
                     ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
-                    EnergyBadge(title: "Sysmte energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy, unit: "mJ")
+                    EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy, unit: "mJ")
                     if valueManager.providerRunning {
                         TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "Provider App running")
                     } else {
                         HStack{
                             TextBadge(title: "", color: Color("red"), image: "exclamationmark.octagon", value: "Provider App is not running")
-                            Link(destination: URL(string: "https://www.example.com/TOS.html")!) {
+                            Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
                                 Image(systemName: "questionmark.circle.fill")
                                     .font(.system(size: 24))
                             }
@@ -594,7 +546,6 @@ func ProcessBadge(title: String, color: Color, process: String)->some View {
 
         Text(title)
             .font(.caption2.bold())
-            .foregroundColor(.gray)
 
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -613,7 +564,6 @@ func EnergyBadge(title: String, color: Color, image: String, value: CGFloat, uni
 
             Text(title)
                 .font(.caption2.bold())
-                .foregroundColor(.gray)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
 }
@@ -631,7 +581,6 @@ func TextBadge(title: String, color: Color, image: String, value: String)->some 
 
             Text(title)
                 .font(.caption2.bold())
-                .foregroundColor(.gray)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
 }

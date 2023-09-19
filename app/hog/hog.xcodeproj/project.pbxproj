@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0A69EDE42AA0820E00F4A364 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A69EDE32AA0820E00F4A364 /* DetailView.swift */; };
+		0A6C64572AAF5F9A00664D98 /* demo_db.db in Resources */ = {isa = PBXBuildFile; fileRef = 0A6C64562AAF5F9A00664D98 /* demo_db.db */; };
 		0AEC07772A40D4C2003C82E7 /* hogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEC07762A40D4C2003C82E7 /* hogApp.swift */; };
-		0AEC07792A40D4C2003C82E7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEC07782A40D4C2003C82E7 /* ContentView.swift */; };
 		0AEC077B2A40D4C3003C82E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AEC077A2A40D4C3003C82E7 /* Assets.xcassets */; };
 		0AEC077E2A40D4C3003C82E7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AEC077D2A40D4C3003C82E7 /* Preview Assets.xcassets */; };
 		0AEC07892A40D4C3003C82E7 /* hogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEC07882A40D4C3003C82E7 /* hogTests.swift */; };
@@ -36,10 +36,10 @@
 
 /* Begin PBXFileReference section */
 		0A69EDE32AA0820E00F4A364 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
-		0AAD6F392AA734A100416201 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0A6C64552AACBA5A00664D98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0A6C64562AAF5F9A00664D98 /* demo_db.db */ = {isa = PBXFileReference; lastKnownFileType = text; path = demo_db.db; sourceTree = "<group>"; };
 		0AEC07732A40D4C2003C82E7 /* hog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AEC07762A40D4C2003C82E7 /* hogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hogApp.swift; sourceTree = "<group>"; };
-		0AEC07782A40D4C2003C82E7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0AEC077A2A40D4C3003C82E7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0AEC077D2A40D4C3003C82E7 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		0AEC077F2A40D4C3003C82E7 /* hog.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = hog.entitlements; sourceTree = "<group>"; };
@@ -98,13 +98,13 @@
 		0AEC07752A40D4C2003C82E7 /* hog */ = {
 			isa = PBXGroup;
 			children = (
-				0AAD6F392AA734A100416201 /* Info.plist */,
+				0A6C64552AACBA5A00664D98 /* Info.plist */,
 				0AEC07762A40D4C2003C82E7 /* hogApp.swift */,
-				0AEC07782A40D4C2003C82E7 /* ContentView.swift */,
 				0A69EDE32AA0820E00F4A364 /* DetailView.swift */,
 				0AEC077A2A40D4C3003C82E7 /* Assets.xcassets */,
 				0AEC077F2A40D4C3003C82E7 /* hog.entitlements */,
 				0AEC077C2A40D4C3003C82E7 /* Preview Content */,
+				0A6C64562AAF5F9A00664D98 /* demo_db.db */,
 			);
 			path = hog;
 			sourceTree = "<group>";
@@ -238,6 +238,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A6C64572AAF5F9A00664D98 /* demo_db.db in Resources */,
 				0AEC077E2A40D4C3003C82E7 /* Preview Assets.xcassets in Resources */,
 				0AEC077B2A40D4C3003C82E7 /* Assets.xcassets in Resources */,
 			);
@@ -264,7 +265,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0AEC07792A40D4C2003C82E7 /* ContentView.swift in Sources */,
 				0A69EDE42AA0820E00F4A364 /* DetailView.swift in Sources */,
 				0AEC07772A40D4C2003C82E7 /* hogApp.swift in Sources */,
 			);
@@ -428,7 +428,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1xv;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"hog/Preview Content\"";
 				DEVELOPMENT_TEAM = SBWA476E6F;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -461,7 +461,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1xv;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"hog/Preview Content\"";
 				DEVELOPMENT_TEAM = SBWA476E6F;
 				ENABLE_HARDENED_RUNTIME = YES;

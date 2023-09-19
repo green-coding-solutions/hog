@@ -1,4 +1,7 @@
 # hog
+
+<img src="logo.png" width="100"/>
+
 The hog is a tool that periodically collects energy statistics of your mac and makes them available to you.
 
 There are two main aims:
@@ -17,9 +20,14 @@ give some statistics. You can either call it by hand and send it to the backgrou
 For development purposes we recommend to always first run the program in the foreground and see if everything works fine
 and then use the launch agent.
 
-**IMPORTANT**:
+### Launch agent
 
-### Launch agent (still needs work)
+This is a description on how to set everything up if you did a git clone. You can also just do
+
+```
+curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash
+```
+which will do the whole install for you.
 
 Make the `power_logger.py` script executable with `chmod a+x power_logger.py`
 
@@ -58,9 +66,18 @@ If you want to unload or stop the service:
 sudo launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
 ```
 
+### Settings
+
+It is possible to configure your own settings by using a `settings.ini` file in the same directory as the `power_logger.py`
+script. Following keys are currently used:
+
+- `powermetrics`: This is the delta in ms that power metrics should take samples. So if you set this to 5000 powermetrics will return the aggregated values every 5 seconds
+- `upload_delta`: This is the time delta data should be uploaded in seconds.
+- `api_url`: The url endpoint the data should be uploaded to. You can use the https://github.com/green-coding-berlin/green-metrics-tool if you want but also write/ use your own backend.
+
 ## The desktop App
 
-The hog desktop app gives you analytics of the data that was recorded.
+The hog desktop app gives you analytics of the data that was recorded. Please move this into your app folder.
 
 ## Database
 
@@ -69,3 +86,18 @@ All data is saved in an sqlite database that is located under:
 ```bash
 /Library/Application Support/berlin.green-coding.hog/db.db
 ```
+
+## Contributing
+
+PRs are always welcome. Feel free to drop us an email or look into the issues.
+
+The hog is developed to not need any dependencies.
+
+## Screenshots
+
+<img src="Screenshot.png" width="300"/>
+
+## Sources
+
+- Logo from https://pixabay.com/de/vectors/schwein-schweinchen-ferkel-2660356/
+- Caribou (Public Domain) lib from https://raw.githubusercontent.com/clutchski/caribou/master/caribou.py

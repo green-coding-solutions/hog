@@ -2,7 +2,11 @@
 //  DetailView.swift
 //  hog
 //
-//  Created by Didi Hoffmann on 31.08.23.
+//  Created by Didi Hoffmann <didi@green-coding.berlin>
+//
+// A few things to note:
+// - We can not share the db pointer for the whole app as sqlite does not allow multiple threads to share one connection
+// - Getting the data needs to be in single threads as otherwise the front end might lock up
 //
 
 import SwiftUI
@@ -10,29 +14,60 @@ import SQLite3
 import Charts
 import AppKit
 
-let DB_PATH = "/Library/Application Support/berlin.green-coding.hog/db.db"
+var db_path = "/Library/Application Support/berlin.green-coding.hog/db.db"
+
 
 public func isScriptRunning(scriptName: String) -> Bool {
-    let process = Process()
-    let outputPipe = Pipe()
+    // Because of the app sandbox this doesn't work anymore. We should discuss if we drop the sandboxing
+//    let process = Process()
+//    let outputPipe = Pipe()
+//
+//    process.launchPath = "/usr/bin/env"
+//    process.arguments = ["pgrep", "-f", scriptName]
+//    process.standardOutput = outputPipe
+//
+//    do {
+//        try process.run()
+//        process.waitUntilExit()
+//
+//        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+//        if let output = String(data: outputData, encoding: .utf8), !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+//            return true
+//        }
+//    } catch {
+//        print("An error occurred: \(error)")
+//    }
+//
+//    return false
     
-    process.launchPath = "/usr/bin/env"
-    process.arguments = ["pgrep", "-f", scriptName]
-    process.standardOutput = outputPipe
+    var db: OpaquePointer?
+    var running = false
     
-    do {
-        try process.run()
-        process.waitUntilExit()
-        
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        if let output = String(data: outputData, encoding: .utf8), !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return true
-        }
-    } catch {
-        print("An error occurred: \(error)")
+    if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
+        print("error opening database")
+        return false
     }
+
+    var queryStatement: OpaquePointer?
     
-    return false
+    let queryString = "SELECT COUNT (*) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - 60000);"
+    if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
+        while sqlite3_step(queryStatement) == SQLITE_ROW {
+            let queryResultCol1 = sqlite3_column_int(queryStatement, 0)
+            if queryResultCol1 > 0 {
+                running = true
+            }
+        }
+    } else {
+        let errorMessage = String(cString: sqlite3_errmsg(db))
+        print("Query could not be prepared! \(errorMessage)")
+    }
+
+    sqlite3_finalize(queryStatement)
+    sqlite3_close(db)
+    
+    return running
+
 }
 
 public func getNameByAppName(appName: String) -> String {
@@ -65,7 +100,7 @@ func getMachineId() -> String{
     var db: OpaquePointer?
     var machineId = ""
         
-    if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+    if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
         print("error opening database")
         return ""
     }
@@ -92,8 +127,87 @@ func getMachineId() -> String{
 
 func checkDB() -> Bool {
     let fileManager = FileManager.default
-    return fileManager.fileExists(atPath: DB_PATH)
+    return fileManager.fileExists(atPath: db_path)
 }
+
+//class SettingsManager: ObservableObject {
+//    var lookBackTime:Int = 0
+//
+//    @Published var uploading: Bool = true
+//    @Published var upload_url: String = "Loading ..."
+//    @Published var isLoading: Bool = false
+//
+//    public func refreshData() -> Void{
+//        self.isLoading = true
+//
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            self.loadDataFrom()
+//            DispatchQueue.main.async {
+//                self.isLoading = false
+//            }
+//        }
+//    }
+//
+//    func loadDataFrom() {
+//        var db: OpaquePointer?
+//
+//
+//        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
+//            print("error opening database")
+//            return
+//        }
+//
+//        var newEnergy: CGFloat = 0
+//        var energyQuery:String
+//        if self.lookBackTime == 0 {
+//            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements;"
+//        }else{
+//            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
+//        }
+//        if let result: CGFloat = queryDatabase(db: db, query:energyQuery, type: .float) {
+//            newEnergy = result
+//        }
+//
+//
+//        var newTopApp: String = "Loading"
+//        var topQuery:String
+//
+//        if self.lookBackTime == 0 {
+//            topQuery = """
+//                SELECT name
+//                FROM top_processes
+//                GROUP BY name
+//                ORDER BY SUM(energy_impact) DESC
+//                LIMIT 1; -- to get only the top name
+//                """
+//        }else{
+//            topQuery = """
+//                SELECT name
+//                FROM top_processes
+//                WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime))
+//                GROUP BY name
+//                ORDER BY SUM(energy_impact) DESC
+//                LIMIT 1; -- to get only the top name
+//                """
+//        }
+//
+//        if let result: String = queryDatabase(db: db, query:topQuery, type: .string) {
+//            newTopApp = String(result)
+//        } else {
+//            newTopApp = "No data"
+//        }
+//
+//        DispatchQueue.main.async {
+//            self.energy = newEnergy
+//            self.providerRunning = isScriptRunning(scriptName: "power_logger.py")
+//            self.topApp = newTopApp
+//        }
+//
+//        sqlite3_close(db)
+//
+//    }
+//
+//}
 
 
 class ValueManager: ObservableObject {
@@ -125,7 +239,7 @@ class ValueManager: ObservableObject {
         var db: OpaquePointer?
 
             
-        if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
             print("error opening database")
             return
         }
@@ -247,7 +361,7 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
         
          var db: OpaquePointer?
         
-         if sqlite3_open(DB_PATH, &db) != SQLITE_OK {
+         if sqlite3_open(db_path, &db) != SQLITE_OK {
              print("error opening database")
              return
          }
@@ -344,7 +458,7 @@ class ChartData: ObservableObject, RandomAccessCollection {
         
          var db: OpaquePointer? // SQLite database object
         
-        if sqlite3_open(DB_PATH, &db) != SQLITE_OK { // Open database
+        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
              print("error opening database")
              return
          }
@@ -401,7 +515,7 @@ struct PointsGraph: View {
                     Text("No Data! Please enable provider app.").font(.largeTitle)
                 }else{
                     Chart(chartData) {
-                        PointMark(
+                        BarMark(
                             x: .value("Time", $0.time!),
                             y: .value("Energy", $0.combined_energy)
                         )
@@ -585,37 +699,204 @@ func TextBadge(title: String, color: Color, image: String, value: String)->some 
     .frame(maxWidth: .infinity, alignment: .leading)
 }
 
+struct CopyPasteTextField: NSViewRepresentable {
+    @Binding var text: String
+
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = NSTextField()
+        textField.isBordered = true
+        textField.backgroundColor = NSColor.textBackgroundColor
+        return textField
+    }
+
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        nsView.stringValue = text
+    }
+}
+
+struct OneView: View {
+    
+    var body: some View {
+        Text("1) Open Terminal").font(.headline)
+        HStack{
+            Button(action: {
+                let workspace = NSWorkspace.shared
+                if let url = URL(string: "file:///System/Applications/Utilities/Terminal.app") {
+                    let configuration = NSWorkspace.OpenConfiguration()
+                    workspace.open(url, configuration: configuration, completionHandler: nil)
+                }
+            }) {
+                HStack {
+                    Image(systemName: "terminal") // This is a symbolic representation, actual symbol might differ.
+                    Text("Terminal")
+                }
+            }
+            
+            Text("If the button does not work please look under the Utilities folder in your Apps and start the terminal.")
+        }.padding()
+    }
+}
+
+struct TwoView: View {
+    @State private var text = "curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash"
+
+    var body: some View {
+        Text("2) Run this command").font(.headline)
+        
+        HStack(spacing: 20) {
+            CopyPasteTextField(text: $text)
+            
+            Button("Copy Text") {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(text, forType: .string)
+            }
+        }.padding()
+    }
+}
+struct ThreeView: View {
+    @State private var showInfo: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("3) You will need to enter your password").font(.headline)
+                Button(action: {
+                    showInfo.toggle()
+                }) {
+                    Image(systemName: "info.circle")
+                }
+            }
+            if showInfo {
+                Text("We are very aware that this is a risky operation. The problem is that the program needs to run as root and also the installer needs to activate the program.")
+            }
+        }
+    }
+}
+
+enum TabSelection: Hashable {
+    case last5Minutes, last24Hours, allTime, settings
+}
+
+
+class InstallViewModel: ObservableObject {
+    @Published var renderToggle: Bool = false
+    @Published var selectedTab: TabSelection = .last5Minutes
+    
+    func toggleRender() {
+        renderToggle.toggle()
+    }
+}
+
+struct StepsView: View {
+    var body: some View {
+        HStack{
+            Image("logo2")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 50)
+            Text("Welcome to the hog").font(.title)
+        }
+        Text("It looks like you haven't installed the program that we need to collect the power measurments. Please follow these steps:")
+        Divider()
+        OneView()
+        TwoView()
+        ThreeView()
+        Text("4) All done. Now check").font(.headline)
+
+    }
+}
+
+
+struct InstallView: View {
+    @ObservedObject var viewModel: InstallViewModel
+
+    @State private var showingAlert = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) { // Set alignment to .leading
+
+            StepsView()
+            Button("Re-check if the power data is reported") {
+                viewModel.toggleRender()
+
+            }.padding()
+            Divider()
+            Text("If you just want to see the interface you can also load some demo data visualises what is possible with the hog.")
+            Button("View with demo data") {
+                guard let sourceURL = Bundle.main.url(forResource: "demo_db", withExtension: "db") else {
+                    print("Source file not found!")
+                    return
+                }
+                db_path = sourceURL.path()
+                viewModel.selectedTab = .allTime
+                viewModel.toggleRender()
+            }
+            .alert(isPresented: $showingAlert) {
+                Alert(title: Text("There was an error copying demo data."),
+                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-berlin/hog/issues/new"),
+                      dismissButton: .default(Text("Got it!")))
+            }
+            Divider()
+            Text("You can also read our documentation for all the details under: https://github.com/green-coding-berlin/hog")
+
+        }.padding()
+
+    }
+
+}
+
+struct SettingsView: View {
+    var body: some View {
+        VStack{
+            Text("Settings").font(.headline)
+            Text("Not much to see till now as everything works out of the box :)")
+            Text("- Upload data")
+            Text("- Upload URL")
+        }
+    }
+}
+
+
 
 struct DetailView: View {
     
-    @State private var renderToggle = false
-
+    @ObservedObject var viewModel = InstallViewModel()
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
-        if checkDB(){
-            TabView {
+        if checkDB() || viewModel.renderToggle {
+            TabView(selection: $viewModel.selectedTab) {
                 DataView(lookBackTime: 300000)
                     .tabItem {
                         Label("last 5 minutes", systemImage: "list.dash")
                     }
+                    .tag(TabSelection.last5Minutes)
                 
                 DataView(lookBackTime: 86400000)
                     .tabItem {
                         Label("last 24 hours", systemImage: "square.and.pencil")
                     }
+                    .tag(TabSelection.last24Hours)
+                
                 DataView()
                     .tabItem {
                         Label("all time", systemImage: "square.and.pencil")
                     }
+                    .tag(TabSelection.allTime)
                 
-            }.padding()
-        } else {
-            Text("Please run the power logger script first! See https://github.com/green-coding-berlin/hog for detailed install instructions.")
-            Button("Re-check") {
-                renderToggle.toggle()
+                SettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "square.and.pencil")
+                    }
+                    .tag(TabSelection.settings)
             }
-
+            .padding()
+            .background(colorScheme == .light ? Color.white : Color.black)
+        } else {
+            InstallView(viewModel: viewModel)
         }
-
+        
     }
 }
 

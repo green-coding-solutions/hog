@@ -10,6 +10,8 @@ FILE_URL="https://raw.githubusercontent.com/green-coding-berlin/hog/main/power_l
 PLIST_URL="https://raw.githubusercontent.com/green-coding-berlin/hog/main/berlin.green-coding.hog.plist"
 
 # Download and place the power_logger.py script into the standard directory for user executables
+mkdir -p /usr/local/bin/
+chmod 755 /usr/local/bin/
 curl -o /usr/local/bin/power_logger.py $FILE_URL
 chmod +x /usr/local/bin/power_logger.py
 

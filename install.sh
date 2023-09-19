@@ -4,6 +4,34 @@ set -euo pipefail
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
+# Function to check and install Xcode Command Line Tools
+install_xcode_clt() {
+    if xcode-select --print-path &>/dev/null; then
+        echo "Xcode Command Line Tools are already installed!"
+        return
+    fi
+
+    xcode-select --install &>/dev/null
+
+    echo "Installing Xcode Command Line Tools..."
+
+    while true; do
+        if xcode-select --print-path &>/dev/null; then
+            echo "Installation completed!"
+            return
+        fi
+
+        if ! pgrep "Install Command Line Developer Tools" &>/dev/null; then
+            echo "Installation was canceled or failed!"
+            exit 1
+        fi
+
+        sleep 5
+    done
+}
+
+# Call the function to ensure Xcode Command Line Tools are installed
+install_xcode_clt
 
 # Define download URLs
 FILE_URL="https://raw.githubusercontent.com/green-coding-berlin/hog/main/power_logger.py"

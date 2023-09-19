@@ -33,19 +33,21 @@ install_xcode_clt() {
 # Call the function to ensure Xcode Command Line Tools are installed
 install_xcode_clt
 
-# Define download URLs
-FILE_URL="https://raw.githubusercontent.com/green-coding-berlin/hog/main/power_logger.py"
-PLIST_URL="https://raw.githubusercontent.com/green-coding-berlin/hog/main/berlin.green-coding.hog.plist"
+ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep '/hog_power_logger.zip' | cut -d\" -f4)
+curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
-# Download and place the power_logger.py script into the standard directory for user executables
-mkdir -p /usr/local/bin/
-chmod 755 /usr/local/bin/
-curl -o /usr/local/bin/power_logger.py $FILE_URL
-chmod +x /usr/local/bin/power_logger.py
+mkdir -p /usr/local/bin/hog
 
-# Download and place the .plist file into /Library/LaunchDaemons/
-sudo curl -o /Library/LaunchDaemons/berlin.green-coding.hog.plist $PLIST_URL
-sed -i.bak "s|PATH_PLASE_CHANGE|/usr/local/bin/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
+unzip /tmp/latest_release.zip -d /usr/local/bin/hog/
+rm /tmp/latest_release.zip
+
+chmod 755 /usr/local/bin/hog
+chmod -R 755 /usr/local/bin/hog/
+chmod +x /usr/local/bin/hog/power_logger.py
+
+mv /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
+
+sed -i.bak "s|PATH_PLASE_CHANGE|/usr/local/bin/hog/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
 chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
 chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist
 

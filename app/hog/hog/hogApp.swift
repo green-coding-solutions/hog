@@ -13,9 +13,7 @@ struct hogApp: App {
 
         MenuBarExtra("QuickView", image: "logo") {
             DetailView().frame(
-                minWidth: 600, maxWidth: 800,
-                minHeight: 850, maxHeight: 1000)
-
+                    minWidth: 600, minHeight: 850)
 
         }.menuBarExtraStyle(WindowMenuBarExtraStyle())
     }

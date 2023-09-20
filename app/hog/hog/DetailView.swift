@@ -18,32 +18,48 @@ var db_path = "/Library/Application Support/berlin.green-coding.hog/db.db"
 
 
 public func isScriptRunning(scriptName: String) -> Bool {
-    // Because of the app sandbox this doesn't work anymore. We should discuss if we drop the sandboxing
-//    let process = Process()
-//    let outputPipe = Pipe()
-//
-//    process.launchPath = "/usr/bin/env"
-//    process.arguments = ["pgrep", "-f", scriptName]
-//    process.standardOutput = outputPipe
-//
-//    do {
-//        try process.run()
-//        process.waitUntilExit()
-//
-//        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-//        if let output = String(data: outputData, encoding: .utf8), !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-//            return true
-//        }
-//    } catch {
-//        print("An error occurred: \(error)")
-//    }
-//
-//    return false
-    
+    if isAppSandboxed() {
+        return isScriptRunningUsingDBCheck()
+    } else {
+        return isScriptRunningUsingPGrep(scriptName: scriptName)
+    }
+}
+
+func isAppSandboxed() -> Bool {
+    let bundleIdentifier = Bundle.main.bundleIdentifier ?? ""
+    let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: bundleIdentifier)
+    return containerURL != nil
+}
+
+
+private func isScriptRunningUsingPGrep(scriptName: String) -> Bool {
+    let process = Process()
+    let outputPipe = Pipe()
+
+    process.launchPath = "/usr/bin/env"
+    process.arguments = ["pgrep", "-f", scriptName]
+    process.standardOutput = outputPipe
+
+    do {
+        try process.run()
+        process.waitUntilExit()
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        if let output = String(data: outputData, encoding: .utf8), !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+    } catch {
+        print("Error checking script using pgrep: \(error)")
+    }
+
+    return false
+}
+
+private func isScriptRunningUsingDBCheck() -> Bool {
     var db: OpaquePointer?
     var running = false
     
-    if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
+    if sqlite3_open(db_path, &db) != SQLITE_OK {
         print("error opening database")
         return false
     }
@@ -67,7 +83,6 @@ public func isScriptRunning(scriptName: String) -> Bool {
     sqlite3_close(db)
     
     return running
-
 }
 
 public func getNameByAppName(appName: String) -> String {
@@ -130,84 +145,84 @@ func checkDB() -> Bool {
     return fileManager.fileExists(atPath: db_path)
 }
 
-//class SettingsManager: ObservableObject {
-//    var lookBackTime:Int = 0
-//
-//    @Published var uploading: Bool = true
-//    @Published var upload_url: String = "Loading ..."
-//    @Published var isLoading: Bool = false
-//
-//    public func refreshData() -> Void{
-//        self.isLoading = true
-//
-//        DispatchQueue.global(qos: .userInitiated).async {
-//            self.loadDataFrom()
-//            DispatchQueue.main.async {
-//                self.isLoading = false
-//            }
-//        }
-//    }
-//
-//    func loadDataFrom() {
-//        var db: OpaquePointer?
-//
-//
-//        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
-//            print("error opening database")
-//            return
-//        }
-//
-//        var newEnergy: CGFloat = 0
-//        var energyQuery:String
-//        if self.lookBackTime == 0 {
-//            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements;"
-//        }else{
-//            energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
-//        }
-//        if let result: CGFloat = queryDatabase(db: db, query:energyQuery, type: .float) {
-//            newEnergy = result
-//        }
-//
-//
-//        var newTopApp: String = "Loading"
-//        var topQuery:String
-//
-//        if self.lookBackTime == 0 {
-//            topQuery = """
-//                SELECT name
-//                FROM top_processes
-//                GROUP BY name
-//                ORDER BY SUM(energy_impact) DESC
-//                LIMIT 1; -- to get only the top name
-//                """
-//        }else{
-//            topQuery = """
-//                SELECT name
-//                FROM top_processes
-//                WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime))
-//                GROUP BY name
-//                ORDER BY SUM(energy_impact) DESC
-//                LIMIT 1; -- to get only the top name
-//                """
-//        }
-//
-//        if let result: String = queryDatabase(db: db, query:topQuery, type: .string) {
-//            newTopApp = String(result)
-//        } else {
-//            newTopApp = "No data"
-//        }
-//
-//        DispatchQueue.main.async {
-//            self.energy = newEnergy
-//            self.providerRunning = isScriptRunning(scriptName: "power_logger.py")
-//            self.topApp = newTopApp
-//        }
-//
-//        sqlite3_close(db)
-//
-//    }
-//
-//}
+class SettingsManager: ObservableObject {
+    var lookBackTime:Int = 0
+
+    @Published var machine_id: String = "Loading ..."
+    @Published var powermetrics: Int = 0
+    @Published var api_url: String = "Loading ..."
+    @Published var web_url: String = "Loading ..."
+    @Published var upload_data: Bool = true
+
+    @Published var upload_backlog: Int = 0
+
+    @Published var isLoading: Bool = false
+
+    init(){
+        self.isLoading = true
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.loadDataFrom()
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
+    }
+
+    func loadDataFrom() {
+        var db: OpaquePointer?
+
+        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
+            print("error opening database")
+            return
+        }
+
+        let lastMeasurementQuery = "SELECT machine_id, powermetrics, api_url, web_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
+        var queryStatement: OpaquePointer?
+
+        var new_machine_id = "Loading ..."
+        var new_powermetrics: Int = 0
+        var new_api_url = "Loading ..."
+        var new_web_url = "Loading ..."
+        var upload_data = true
+
+        if sqlite3_prepare_v2(db, lastMeasurementQuery, -1, &queryStatement, nil) == SQLITE_OK {
+            if sqlite3_step(queryStatement) == SQLITE_ROW {
+                new_machine_id = String(cString: sqlite3_column_text(queryStatement, 0))
+                new_powermetrics = Int(sqlite3_column_int(queryStatement, 1))
+                new_api_url = String(cString: sqlite3_column_text(queryStatement, 2))
+                new_web_url = String(cString: sqlite3_column_text(queryStatement, 3))
+                upload_data = sqlite3_column_int(queryStatement, 4) != 0 // assuming it's stored as 0 for false, non-0 for true
+            }
+            sqlite3_finalize(queryStatement)
+        }
+        
+        let uploadCountQuery = "SELECT COUNT(*) FROM measurements WHERE uploaded = 0;"
+        var new_upload_backlog: Int = 0
+
+        if sqlite3_prepare_v2(db, uploadCountQuery, -1, &queryStatement, nil) == SQLITE_OK {
+            if sqlite3_step(queryStatement) == SQLITE_ROW {
+                new_upload_backlog = Int(sqlite3_column_int(queryStatement, 0))
+            }
+            sqlite3_finalize(queryStatement) // Always finalize your statement when done
+        } else {
+            print("SELECT statement could not be prepared")
+        }
+        
+        sqlite3_close(db)
+        
+        DispatchQueue.main.async {
+            self.machine_id = new_machine_id
+            self.powermetrics = new_powermetrics
+            self.api_url = new_api_url
+            self.web_url = new_web_url
+            self.upload_data = upload_data
+            self.upload_backlog = new_upload_backlog
+        }
+
+    }
+
+}
 
 
 class ValueManager: ObservableObject {
@@ -216,22 +231,21 @@ class ValueManager: ObservableObject {
     @Published var energy: CGFloat = 0
     @Published var providerRunning: Bool = false
     @Published var topApp: String = "Loading..."
-    @Published var isLoading: Bool = false
+    @Published var isLoading: Bool = true
 
+    
     enum ValueType {
         case float
         case string
     }
 
     public func refreshData(lookBackTime: Int = 0) -> Void{
+
         self.isLoading = true
         self.lookBackTime = lookBackTime
 
         DispatchQueue.global(qos: .userInitiated).async {
             self.loadDataFrom()
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
         }
     }
 
@@ -284,10 +298,13 @@ class ValueManager: ObservableObject {
             newTopApp = "No data"
         }
 
+        let newScriptRunning = isScriptRunning(scriptName: "power_logger.py")
+        
         DispatchQueue.main.async {
             self.energy = newEnergy
-            self.providerRunning = isScriptRunning(scriptName: "power_logger.py")
+            self.providerRunning = newScriptRunning
             self.topApp = newTopApp
+            self.isLoading = false
         }
 
         sqlite3_close(db)
@@ -322,14 +339,14 @@ struct TopProcess: Codable, Identifiable {
     let id: UUID = UUID()  // Add this line if you want a unique identifier
     let name: String
     let energy_impact: Double
-    let cputime_ns: Int64
+    let cputime_per: Int32
 
     enum CodingKeys: String, CodingKey {
-        case name, energy_impact, cputime_ns
+        case name, energy_impact, cputime_per
     }
 }
 
-class TopProcessData: ObservableObject, RandomAccessCollection {
+class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
     var lookBackTime:Int = 0
     typealias Element = TopProcess
     typealias Index = Array<TopProcess>.Index
@@ -339,10 +356,27 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
     var startIndex: Index { lines.startIndex }
     var endIndex: Index { lines.endIndex }
 
-    @Published var isLoading: Bool = false
+    @Published var isLoading: Bool = true
     
     subscript(position: Index) -> Element {
         lines[position]
+    }
+    
+    func sort(using sortOrder: [KeyPathComparator<TopProcess>]) {
+        // Implement sorting logic
+        lines.sort { a, b in
+            for comparator in sortOrder {
+                switch comparator.compare(a, b) {
+                case .orderedAscending:
+                    return true
+                case .orderedDescending:
+                    return false
+                case .orderedSame:
+                    continue
+                }
+            }
+            return false
+        }
     }
     
     public func refreshData(lookBackTime: Int = 0) -> Void{
@@ -350,9 +384,6 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
         self.lookBackTime = lookBackTime
         DispatchQueue.global(qos: .userInitiated).async {
             self.loadDataFrom()
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
         }
     }
 
@@ -371,7 +402,7 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
         let queryString: String
         if self.lookBackTime == 0 {
             queryString = """
-                SELECT name, SUM(energy_impact), SUM(cputime_ns)
+                SELECT name, SUM(energy_impact), AVG(cputime_per)
                 FROM top_processes
                 GROUP BY name
                 ORDER BY SUM(energy_impact) DESC
@@ -380,7 +411,7 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
                 """
         } else {
             queryString = """
-                SELECT name, SUM(energy_impact), SUM(cputime_ns)
+                SELECT name, SUM(energy_impact), AVG(cputime_per)
                 FROM top_processes
                 WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime))
                 GROUP BY name
@@ -396,12 +427,14 @@ class TopProcessData: ObservableObject, RandomAccessCollection {
                     name = String(cString: namePointer)
                 }
                 let energy_impact = sqlite3_column_double(queryStatement, 1)
-                let cputime_ns = sqlite3_column_int64(queryStatement, 2)
+                let cputime_per = sqlite3_column_int(queryStatement, 2)
                 
-                newLines.append(TopProcess(name: name, energy_impact: energy_impact, cputime_ns: cputime_ns))
+                newLines.append(TopProcess(name: name, energy_impact: energy_impact, cputime_per: cputime_per))
             }
             DispatchQueue.main.async {
                 self.lines = newLines
+                self.isLoading = false
+
             }
         }
 
@@ -530,6 +563,16 @@ struct PointsGraph: View {
 
 struct TopProcessTable: View {
     @ObservedObject var tpData: TopProcessData
+    @State private var sortOrder = [
+        //KeyPathComparator(\TopProcess.name, order: .forward),
+        KeyPathComparator(\TopProcess.energy_impact, order: .forward),
+        KeyPathComparator(\TopProcess.cputime_per, order: .forward),
+    ]
+    @Environment(\.colorScheme) var colorScheme
+    
+    var tableColour: Color {
+        return colorScheme == .dark ? Color.white : Color.primary
+    }
 
     init(tpData: TopProcessData) {
         self.tpData = tpData
@@ -544,28 +587,37 @@ struct TopProcessTable: View {
         } else {
             if tpData.isEmpty {
             } else {
-                Table(tpData) {
-                    TableColumn(""){ line in
-                        Image(nsImage: getIconByAppName(appName: line.name) ?? NSImage())
-                            .resizable()
-                            .frame(width: 15, height: 15)
-                            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                VStack{
+                    Table(tpData, sortOrder: $sortOrder) {
+                        TableColumn(""){ line in
+                            Image(nsImage: getIconByAppName(appName: line.name) ?? NSImage())
+                                .resizable()
+                                .frame(width: 15, height: 15)
+                                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                            
+                        }.width(20)
                         
-                    }.width(20)
-                    
-                    TableColumn("Name", value: \.name)
-                    TableColumn("Energy Impact"){ line in
-                        Text(String(format: "%.2f", line.energy_impact))
+                        TableColumn("Name", value: \TopProcess.name)
+                        TableColumn("Energy Impact", value: \TopProcess.energy_impact){ line in
+                            Text(String(format: "%.0f", line.energy_impact))
+                        }
+                        TableColumn("AVG CPU time %", value: \TopProcess.cputime_per){ line in
+                            Text(String(line.cputime_per))
+                        }
                     }
-                    TableColumn("CPU time"){ line in
-                        Text(String(line.cputime_ns))
-                    }
-                }
-                .padding()
-                .tableStyle(.bordered(alternatesRowBackgrounds: true))
+                    .onChange(of: sortOrder) { newOrder in
+                        tpData.sort(using: newOrder)
+                    }.foregroundColor(tableColour)
 
+
+                    .tableStyle(.bordered(alternatesRowBackgrounds: true))
+                    HStack {
+                        Spacer()  // Pushes the Link to the right side.
+                        Link("Description", destination: URL(string: "https://github.com/green-coding-berlin/hog#the-desktop-app")!)
+                            .font(.footnote)  // This makes the font size smaller.
+                    }
+                }.padding()
             }
-
         }
     }
 }
@@ -577,12 +629,18 @@ struct DataView: View {
     @State var lineData = TopProcessData()
     @ObservedObject var valueManager = ValueManager()
     @State private var isHovering = false
+    @State private var refreshFlag = false
+
+    var settingsManager = SettingsManager()
 
     var lookBackTime: Int
 
     
     init(lookBackTime: Int = 0) {
         self.lookBackTime = lookBackTime
+        self.chartData.refreshData(lookBackTime: self.lookBackTime)
+        self.lineData.refreshData(lookBackTime: self.lookBackTime)
+        self.valueManager.refreshData(lookBackTime: self.lookBackTime)
     }
     
     var body: some View {
@@ -590,15 +648,11 @@ struct DataView: View {
             
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("This is a minimalistic overview of your energy usage and the apps that are using the most resources.")
+                    Text("This is a very minimalistic overview of your energy usage.")
                 }
                 
                 Spacer(minLength: 10)
-                Button("Detailed analytics") {
-                    if let url = URL(string: "https://metrics.green-coding.berlin/hog.html?machine_id=\(getMachineId())") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
+                
                 Button(action: {
                     self.chartData.refreshData(lookBackTime: self.lookBackTime)
                     self.lineData.refreshData(lookBackTime: self.lookBackTime)
@@ -616,30 +670,38 @@ struct DataView: View {
             VStack{
                 
                 VStack(spacing: 0) {
-                    ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
-                    EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy, unit: "mJ")
-                    if valueManager.providerRunning {
-                        TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "Provider App running")
+                    if valueManager.isLoading {
+                        Text("Loading")
                     } else {
-                        HStack{
-                            TextBadge(title: "", color: Color("red"), image: "exclamationmark.octagon", value: "Provider App is not running")
-                            Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .font(.system(size: 24))
+                        ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
+                        EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy)
+                        if valueManager.providerRunning {
+                            TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "All measurement systems are functional")
+                        } else {
+                            HStack{
+                                TextBadge(title: "", color: Color("red"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
+                                Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
+                                    Image(systemName: "questionmark.circle.fill")
+                                        .font(.system(size: 24))
+                                }
                             }
                         }
                     }
+                    Button(action: {
+                        if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_id)") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }) {
+                        Text("View Detailed Analytics")
+                            .padding(20)
+                    }
+
 
                 }
 
                 PointsGraph(chartData: chartData)
                 TopProcessTable(tpData: lineData)
                 
-            }
-            .onAppear {
-                self.chartData.refreshData(lookBackTime: self.lookBackTime)
-                self.lineData.refreshData(lookBackTime: self.lookBackTime)
-                self.valueManager.refreshData(lookBackTime: self.lookBackTime)
             }
             
         }.padding()
@@ -665,15 +727,28 @@ func ProcessBadge(title: String, color: Color, process: String)->some View {
     .frame(maxWidth: .infinity, alignment: .leading)
 }
 
+func formatEnergy(_ mJ: Double) -> String {
+    let joules = mJ / 1000.0
+    let wattHours = joules / 3600.0
+    let wattMinutes = joules / 60.0
+
+    if wattHours >= 1 {
+        return String(format: "%.2f Watt Hours", wattHours)
+    } else {
+        return String(format: "%.2f Watt Min", wattMinutes)
+    }
+}
+
+
 @ViewBuilder
-func EnergyBadge(title: String, color: Color, image: String, value: CGFloat, unit: String)->some View {
+func EnergyBadge(title: String, color: Color, image: String, value: CGFloat)->some View {
     HStack {
         Image(systemName: image)
             .font(.title2)
             .foregroundColor(color)
             .padding(10)
         
-            Text(String(format: "%.1f %@", value  / 1000, unit))
+            Text(String(format: "%@", formatEnergy(value)))
                 .font(.title2.bold())
 
             Text(title)
@@ -760,7 +835,7 @@ struct ThreeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("3) You will need to enter your password").font(.headline)
+                Text("3) You will need to enter your password and install xcode tools.").font(.headline)
                 Button(action: {
                     showInfo.toggle()
                 }) {
@@ -846,16 +921,42 @@ struct InstallView: View {
 
 }
 
-struct SettingsView: View {
+private struct SettingDetailView: View {
+    let title: String
+    let value: String
+
     var body: some View {
-        VStack{
-            Text("Settings").font(.headline)
-            Text("Not much to see till now as everything works out of the box :)")
-            Text("- Upload data")
-            Text("- Upload URL")
+        Group {
+            Text(title)
+                .bold()
+            Text(value)
+                .padding(.bottom, 10)
         }
     }
 }
+struct SettingsView: View {
+    
+    @ObservedObject var settingsManager = SettingsManager()
+   
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Settings")
+                .font(.headline)
+                .bold()
+            Text("These are the settings that are set by the power logger.\nPlease refer to https://github.com/green-coding-berlin/hog#settings")
+            Divider().padding()
+            SettingDetailView(title: "Machine ID:", value: settingsManager.machine_id)
+            SettingDetailView(title: "Powermetrics Intervall:", value: "\(settingsManager.powermetrics)")
+            SettingDetailView(title: "Upload to URL:", value: settingsManager.api_url)
+            SettingDetailView(title: "Web View URL:", value: settingsManager.web_url)
+            SettingDetailView(title: "Upload data:", value: settingsManager.upload_data ? "Yes" : "No")
+            SettingDetailView(title: "Upload Backlog Count:", value: "\(settingsManager.upload_backlog)")
+
+        }
+        .padding()
+    }
+}
+
 
 
 
@@ -865,23 +966,23 @@ struct DetailView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        if checkDB() || viewModel.renderToggle {
+        if checkDB() {
             TabView(selection: $viewModel.selectedTab) {
                 DataView(lookBackTime: 300000)
                     .tabItem {
-                        Label("last 5 minutes", systemImage: "list.dash")
+                        Label("Last 5 Minutes", systemImage: "list.dash")
                     }
                     .tag(TabSelection.last5Minutes)
                 
                 DataView(lookBackTime: 86400000)
                     .tabItem {
-                        Label("last 24 hours", systemImage: "square.and.pencil")
+                        Label("Last 24 Hours", systemImage: "square.and.pencil")
                     }
                     .tag(TabSelection.last24Hours)
                 
                 DataView()
                     .tabItem {
-                        Label("all time", systemImage: "square.and.pencil")
+                        Label("All Time", systemImage: "square.and.pencil")
                     }
                     .tag(TabSelection.allTime)
                 

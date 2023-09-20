@@ -10,7 +10,6 @@ def upgrade(connection):
             (id INTEGER PRIMARY KEY,
             time INT,
             data STRING,
-            settings STRING,
             uploaded INT)'''
     connection.execute(tbl_measurements)
 
@@ -24,11 +23,17 @@ def upgrade(connection):
     connection.execute(tbl_power_measurements)
 
     tbl_top_processes = '''CREATE TABLE IF NOT EXISTS top_processes
-                (time INT, name STRING, energy_impact REAL, cputime_ns INT)'''
+                (time INT, name STRING, energy_impact REAL, cputime_per INT)'''
     connection.execute(tbl_top_processes)
 
     tbl_settings = '''CREATE TABLE IF NOT EXISTS settings
-                (machine_id TEXT)'''
+                (time INT,
+                machine_id TEXT,
+                powermetrics INT,
+                api_url STRING,
+                web_url STRING,
+                upload_delta INT,
+                upload_data NUMERIC)'''
     connection.execute(tbl_settings)
 
     connection.commit()

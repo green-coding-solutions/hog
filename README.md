@@ -1,15 +1,20 @@
-# hog
+# The Power Hog
 
 <img src="logo.png" width="100"/>
 
-The hog is a tool that periodically collects energy statistics of your mac and makes them available to you.
+The power hog is a tool that periodically collects energy statistics of your mac and makes them available to you.
 
 There are two main aims:
 
 1) Identify which apps are using a lot of energy on your machine.
-2) Collecting the data from as many machines as possible to identify wasteful apps.
+2) Collecting the data from as many machines as possible to identify wasteful apps globally.
 
-The hog consists of 2 apps.
+We provide a website for detailed analytics of your data. The hog by default uploads your measurement data to our
+[Green Metrics Tool](https://github.com/green-coding-berlin/green-metrics-tool) backend. We put in a lot of effort
+to make sure that no confidential information is exposed but please refer to the [settings](#settings) section if you
+want to disable the upload or submit the data to your own [backend](https://docs.green-coding.berlin/docs/installation/installation-linux/).
+
+The hog consists of 2 apps that run on your local system. You need to power logger but not the app!
 
 ## Power logger
 
@@ -20,7 +25,20 @@ give some statistics. You can either call it by hand and send it to the backgrou
 For development purposes we recommend to always first run the program in the foreground and see if everything works fine
 and then use the launch agent.
 
-### Launch agent
+If you want to avoid running the desktop app you can call the `power_logger.py` script with `-w` which will give
+you the details url.
+
+You can also run the `powermetrics` process yourself and then use `power_logger.py` to process the data and upload it.
+You can use the `-f` parameter with a filename. Please submit the data in the plist format. You can use the following call string:
+`powermetrics --show-all -i 5000 -f plist -o FILENAME` and to run the powermetrics process yourself.
+
+### Parameter list
+
+- `-d`: Set's debug/ development mode to true. The Settings are set to local environments and we output statistics when running.
+- `-w`: Gives you the url of the analysis website and exits. This is especially useful when not using the desktop app
+- `-f filename`: Use the file as powermetrics input and don't start the process internally.
+
+### Setup of the power collection script
 
 This is a description on how to set everything up if you did a git clone. You can also just do
 
@@ -28,6 +46,8 @@ This is a description on how to set everything up if you did a git clone. You ca
 curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash
 ```
 which will do the whole install for you.
+
+#### Do it manually
 
 Make the `power_logger.py` script executable with `chmod a+x power_logger.py`
 
@@ -69,15 +89,29 @@ sudo launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
 ### Settings
 
 It is possible to configure your own settings by using a `settings.ini` file in the same directory as the `power_logger.py`
-script. Following keys are currently used:
+script or adding a `.hog_settings.ini` to your home folder. The home folder settings will be prioritized.
+
+Following keys are currently used:
 
 - `powermetrics`: This is the delta in ms that power metrics should take samples. So if you set this to 5000 powermetrics will return the aggregated values every 5 seconds
 - `upload_delta`: This is the time delta data should be uploaded in seconds.
 - `api_url`: The url endpoint the data should be uploaded to. You can use the https://github.com/green-coding-berlin/green-metrics-tool if you want but also write/ use your own backend.
+- `web_url`: The url where the analytics can be found. We will append the machine ID to this so make sure the end of the string is a `=`
 
 ## The desktop App
 
 The hog desktop app gives you analytics of the data that was recorded. Please move this into your app folder.
+
+### Description of the headings
+
+- `Name`: This is the name of the process coalition. A coalition can be multiple processes. For example a program might fork
+        new process which will all show up in the coalition. Sometimes a shell might turn up here. Please tell us so we can
+        add this as an exception
+- `Energy Impact`: This is the value mac gives it's processes. The exact formula is not known but we know that quite some
+        factors are considered. For now this is the best value we've got 🫣
+- `AVG Cpu Time %`: This is how long this coalition has spent on the CPUs. We take a percentage which can be over 100% as
+        the coalition could run on multiple cpus at the same time. So if a process takes up 100% of cpu time and runs on 4 cpus
+        the time will be 400%.
 
 ## Database
 

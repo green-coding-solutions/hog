@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>22G90</string>
+	<string>22G91</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Hog</string>
+	<string>Power Hog</string>
 	<key>CFBundleExecutable</key>
 	<string>hog</string>
 	<key>CFBundleIconFile</key>
@@ -23,7 +23,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1</string>
+	<string>0.2</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
@@ -37,20 +37,22 @@
 	<key>DTPlatformName</key>
 	<string>macosx</string>
 	<key>DTPlatformVersion</key>
-	<string>13.3</string>
+	<string>14.0</string>
 	<key>DTSDKBuild</key>
-	<string>22E245</string>
+	<string>23A334</string>
 	<key>DTSDKName</key>
-	<string>macosx13.3</string>
+	<string>macosx14.0</string>
 	<key>DTXcode</key>
-	<string>1431</string>
+	<string>1500</string>
 	<key>DTXcodeBuild</key>
-	<string>14E300c</string>
+	<string>15A240d</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.3</string>
 	<key>LSUIElement</key>
+	<true/>
+	<key>com.apple.security.app-sandbox</key>
 	<true/>
 </dict>
 </plist>

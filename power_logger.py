@@ -28,7 +28,11 @@ from pathlib import Path
 stop_signal = False
 
 stats = {
-    'combined_power':0
+    'combined_power': 0,
+    'cpu_energy': 0,
+    'gpu_energy': 0,
+    'ane_energy': 0,
+    'energy_impact': 0,
 }
 
 def sigint_handler(_, __):
@@ -38,7 +42,7 @@ def sigint_handler(_, __):
         sys.exit()
 
     stop_signal = True
-    print("Received stop signal. Terminating all processes.")
+    print('Received stop signal. Terminating all processes.')
 
 def siginfo_handler(_, __):
     print(stats)
@@ -49,31 +53,48 @@ signal.signal(signal.SIGTERM, sigint_handler)
 signal.signal(signal.SIGINFO, siginfo_handler)
 
 
-APP_NAME = "berlin.green-coding.hog"
+APP_NAME = 'berlin.green-coding.hog'
 app_support_path = Path(f"/Library/Application Support/{APP_NAME}")
 app_support_path.mkdir(parents=True, exist_ok=True)
 
 DATABASE_FILE = app_support_path / 'db.db'
 
-MIGRATIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
-
-config = configparser.ConfigParser()
-config.read('settings.ini')
+MIGRATIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
 
 default_settings = {
     'powermetrics': 5000,
     'upload_delta': 300,
     'api_url': 'https://api.green-coding.berlin/v1/hog/add',
+    'web_url': 'http://metrics.green-coding.berlin/hog-details.html?machine_id=',
     'upload_data': True,
 }
 
+home_dir = os.path.expanduser('~')
+script_dir = os.path.dirname(os.path.realpath(__file__))
 
-SETTINGS = {
-    'powermetrics': config['DEFAULT'].get('powermetrics', default_settings['powermetrics']),
-    'upload_delta': config['DEFAULT'].get('upload_delta', default_settings['upload_delta']),
-    'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
-    'upload_data': config['DEFAULT'].getboolean('upload_data', default_settings['upload_data']),
-}
+if os.path.exists(os.path.join(home_dir, '.hog_settings.ini')):
+    config_path = os.path.join(home_dir, '.hog_settings.ini')
+elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
+    config_path = os.path.join(script_dir, 'settings.ini')
+else:
+    config_path = None
+
+config = configparser.ConfigParser()
+
+SETTINGS = {}
+if config_path:
+    config.read(config_path)
+    SETTINGS = {
+        'powermetrics': config['DEFAULT'].get('powermetrics', default_settings['powermetrics']),
+        'upload_delta': config['DEFAULT'].get('upload_delta', default_settings['upload_delta']),
+        'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
+        'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
+        'upload_data': config['DEFAULT'].getboolean('upload_data', default_settings['upload_data']),
+    }
+else:
+    SETTINGS = default_settings
+
+
 
 machine_id = None
 
@@ -81,50 +102,56 @@ conn = sqlite3.connect(DATABASE_FILE)
 c = conn.cursor()
 
 
-def run_powermetrics(debug: bool):
+def run_powermetrics(debug: bool, filename: str = None):
 
-    # We ignore stderr here as powermetrics is quite verbose on stderr and the buffer fills up quite fast
-    cmd = ['powermetrics',
-           '--show-all',
-           '-i', str(SETTINGS['powermetrics']),
-           '-f', 'plist']
+    def process_lines(lines, debug):
+        buffer = []
+        last_upload_time = time.time()
+        for line in lines:
+            line = line.strip().replace('&', '&amp;')
+            buffer.append(line)
+            if line == '</plist>':
+                parse_powermetrics_output(''.join(buffer))
 
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                if debug:
+                    print(stats)
+                    sys.stdout.flush()
 
-    buffer = []
-    last_upload_time = time.time()
+                buffer = []
 
-    for line in process.stdout:
-        line = line.strip().replace("&", "&amp;")
+                if SETTINGS['upload_data']:
+                    current_time = time.time()
+                    if current_time - last_upload_time >= SETTINGS['upload_delta']:
+                        upload_data_to_endpoint()
+                        last_upload_time = current_time
 
-        buffer.append(line)
-        if line == '</plist>':
-            # We only add the data to the queue once it is complete to avoid race conditions
-            parse_powermetrics_output(''.join(buffer))
+            if stop_signal:
+                break
 
-            if debug:
-                print(stats)
-                sys.stdout.flush()
+    if filename:
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+            process_lines(lines, debug)
+    else:
+        cmd = ['powermetrics',
+               '--show-all',
+               '-i', str(SETTINGS['powermetrics']),
+               '-f', 'plist']
 
-            buffer = []
-
-            if SETTINGS['upload_data']:
-                current_time = time.time()
-                if current_time - last_upload_time >= SETTINGS['upload_delta']:
-                    upload_data_to_endpoint()
-                    last_upload_time = current_time
-
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        process_lines(process.stdout, debug)
 
         if stop_signal:
             process.terminate()
-            break
 
+    # Make sure that all data has been uploaded when exiting
+    upload_data_to_endpoint()
 
 def upload_data_to_endpoint():
     while True:
 
         # We need to limit the amount of data here as otherwise the payload becomes to big
-        c.execute("SELECT id, time, data, settings FROM measurements WHERE uploaded = 0 LIMIT 10;")
+        c.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
         rows = c.fetchall()
 
         if not rows:
@@ -132,10 +159,12 @@ def upload_data_to_endpoint():
 
         payload = []
         for row in rows:
-            row_id, time_val, data_val, settings_val = row
+            row_id, time_val, data_val = row
 
-            settings_upload = json.loads(settings_val)
-            del settings_upload['api_url'] # We don't need this in the DB on the server
+            settings_upload = SETTINGS.copy()
+            # We don't need this in the DB on the server
+            del settings_upload['api_url']
+            del settings_upload['web_url']
 
             payload.append({
                 'time': time_val,
@@ -154,7 +183,7 @@ def upload_data_to_endpoint():
             with urllib.request.urlopen(req) as response:
                 if response.status == 200:
                     for p in payload:
-                        c.execute("UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;", (int(time.time()), p['row_id']))
+                        c.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
                     conn.commit()
                 else:
                     print(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
@@ -170,16 +199,12 @@ def upload_data_to_endpoint():
             pass
 
 
-
-###### END IMPORT BLOCK #######
-
-
 def find_top_processes(data: list):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
     new_data = []
     for coalition in data:
         if coalition['name'] == 'com.googlecode.iterm2' or coalition['name'].strip() == '':
-            new_data.extend(coalition["tasks"])
+            new_data.extend(coalition['tasks'])
         else:
             new_data.append(coalition)
 
@@ -211,47 +236,104 @@ def parse_powermetrics_output(output: str):
             compressed_data = zlib.compress(str(json.dumps(data)).encode())
             compressed_data_str = base64.b64encode(compressed_data).decode()
 
-            c.execute("INSERT INTO measurements (time, data, settings, uploaded) VALUES (?, ?, ?, 0)",
-                    (data['timestamp'], compressed_data_str, json.dumps(SETTINGS)))
+            c.execute('INSERT INTO measurements (time, data, uploaded) VALUES (?, ?, 0)',
+                    (data['timestamp'], compressed_data_str))
 
-            c.execute("""INSERT INTO power_measurements
+            cpu_energy_data = {}
+            if 'ane_energy' in data['processor']:
+                cpu_energy_data = {
+                    'combined_power': int(data['processor'].get('combined_power', 0) * data['elapsed_ns'] / 1_000_000_000.0),
+                    'cpu_energy': int(data['processor'].get('cpu_energy', 0)),
+                    'gpu_energy': int(data['processor'].get('gpu_energy', 0)),
+                    'ane_energy': int(data['processor'].get('ane_energy', 0)),
+                    'energy_impact': data['all_tasks'].get('energy_impact'),
+                }
+            elif 'package_joules' in data['processor']:
+                # Intel processors report in joules/ watts and not mJ
+                cpu_energy_data = {
+                    'combined_power': int(data['processor'].get('package_joules', 0) * 1_000),
+                    'cpu_energy': int(data['processor'].get('cpu_joules', 0) * 1_000),
+                    'gpu_energy': int(data['processor'].get('igpu_watts', 0) * data['elapsed_ns'] / 1_000_000_000.0 * 1_000),
+                    'ane_energy': 0,
+                    'energy_impact': data['all_tasks'].get('energy_impact'),
+                }
+
+            c.execute('''INSERT INTO power_measurements
                       (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact) VALUES
-                      (?, ?, ?, ?, ?, ?)""",
+                      (?, ?, ?, ?, ?, ?)''',
                     (data['timestamp'],
-                     int(data['processor'].get('combined_power', 0) * data['elapsed_ns'] / 1_000_000_000.0),
-                     int(data['processor'].get('cpu_energy', 0)),
-                     int(data['processor'].get('gpu_energy', 0)),
-                     int(data['processor'].get('ane_energy', 0)),
-                     data['all_tasks'].get('energy_impact'),
-                     ))
+                     cpu_energy_data['combined_power'],
+                     cpu_energy_data['cpu_energy'],
+                     cpu_energy_data['gpu_energy'],
+                     cpu_energy_data['ane_energy'],
+                     cpu_energy_data['energy_impact']))
 
-            stats['combined_power'] += data['processor'].get('combined_power', 0) * data['elapsed_ns'] / 1_000_000_000.0
+            for key in stats.keys():
+                stats[key] += cpu_energy_data[key]
+
 
             for process in find_top_processes(data['coalitions']):
-                c.execute("INSERT INTO top_processes (time, name, energy_impact, cputime_ns) VALUES (?, ?, ?, ?)",
-                    (data['timestamp'], process['name'], process['energy_impact'], process['cputime_ns']))
+                cpu_per = int(process['cputime_ns'] / data['elapsed_ns'] * 100)
+                c.execute('INSERT INTO top_processes (time, name, energy_impact, cputime_per) VALUES (?, ?, ?, ?)',
+                    (data['timestamp'], process['name'], process['energy_impact'], cpu_per))
 
             conn.commit()
+
+def save_settings():
+    global machine_id
+
+    c.execute('SELECT machine_id, powermetrics, api_url, web_url, upload_delta, upload_data FROM settings ORDER BY time DESC LIMIT 1;')
+    result = c.fetchone()
+
+    if result:
+        machine_id, last_powermetrics, last_api_url, last_web_url, last_upload_delta, last_upload_data = result
+
+        if (last_powermetrics == SETTINGS['powermetrics'] and
+            last_api_url.strip() == SETTINGS['api_url'].strip() and
+            last_web_url.strip() == SETTINGS['web_url'].strip() and
+            last_upload_delta == SETTINGS['upload_delta'] and
+            last_upload_data == SETTINGS['upload_data']):
+            return
+    else:
+        machine_id = str(uuid.uuid1())
+
+    c.execute('''INSERT INTO settings
+            (time, machine_id, powermetrics, api_url, web_url, upload_delta, upload_data) VALUES
+            (?, ?, ?, ?, ?, ?, ?)''', (
+                int(time.time()),
+                machine_id,
+                SETTINGS['powermetrics'],
+                SETTINGS['api_url'].strip(),
+                SETTINGS['web_url'].strip(),
+                SETTINGS['upload_delta'],
+                SETTINGS['upload_data'],
+            ))
+
+    conn.commit()
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=
-                                     """A powermetrics wrapper that does simple parsing and writes to a file.""")
-    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
+                                     '''A powermetrics wrapper that does simple parsing and writes to a file.''')
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug/ development mode')
+    parser.add_argument('-w', '--website', action='store_true', help='Shows the website URL')
+    parser.add_argument('-f', '--file', type=str, help='Path to the input file')
+
     args = parser.parse_args()
 
     if args.debug:
         SETTINGS = {
             'powermetrics' : 1000,
             'upload_delta': 5,
-            'api_url': "http://api.green-coding.internal:9142/v1/hog/add",
+            'api_url': 'http://api.green-coding.internal:9142/v1/hog/add',
+            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_id=',
             'upload_data': True,
         }
 
     if os.geteuid() != 0:
-        print("The script needs to be run as root!")
-        sys.exit()
+        print('The script needs to be run as root!')
+        sys.exit(1)
 
     # Make sure that everyone can write to the DB
     os.chmod(DATABASE_FILE, stat.S_IRUSR | stat.S_IWUSR |
@@ -262,17 +344,14 @@ if __name__ == '__main__':
     # Make sure the DB is migrated
     caribou.upgrade(DATABASE_FILE, MIGRATIONS_PATH)
 
-    c.execute("SELECT machine_id FROM settings LIMIT 1")
-    result = c.fetchone()
+    save_settings()
 
-    if result:
-        machine_id = result[0]
-    else:
-        machine_id = str(uuid.uuid1())
-        c.execute("INSERT INTO settings (machine_id) VALUES (?)", (machine_id,))
-        conn.commit()
+    if args.website:
+        print('Please visit this url for detailed analytics:')
+        print(f"{SETTINGS['web_url']}{machine_id}")
+        sys.exit()
 
-    run_powermetrics(args.debug)
+    run_powermetrics(args.debug, args.file)
 
     c.close()
 

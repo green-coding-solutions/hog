@@ -1,0 +1,38 @@
+[FORMAT]
+
+# Maximum number of characters on a single line.
+max-line-length=120
+
+
+[MESSAGES CONTROL]
+
+disable=missing-function-docstring,
+    missing-module-docstring,
+    missing-class-docstring,
+    too-few-public-methods,
+    duplicate-code,
+    too-many-nested-blocks,
+    line-too-long,
+    too-many-boolean-expressions,
+    too-many-nested-blocks,
+    line-too-long,
+    protected-access,
+    too-many-lines,
+    multiple-statements,
+    pointless-string-statement,
+    too-many-locals,
+    too-many-public-methods,
+    too-many-branches,
+    too-many-statements,
+    too-many-arguments,
+    invalid-name,
+    wrong-import-position,
+    too-many-return-statements,
+
+
+#    import-error
+
+[MASTER]
+ignore=env
+ignore-patterns=^env.*
+ignore-paths=^env.*$

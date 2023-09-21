@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# pylint: disable=W0603,W0602
 import json
 import subprocess
 import time
@@ -12,17 +13,17 @@ import signal
 import sys
 import uuid
 import os
+import os.path
 import stat
 import urllib.request
 import configparser
-import os.path
 import sqlite3
 import http
-
-import libs.caribou as caribou
-
 from datetime import timezone
 from pathlib import Path
+
+from libs import caribou
+
 
 # Shared variable to signal the thread to stop
 stop_signal = False
@@ -129,7 +130,7 @@ def run_powermetrics(debug: bool, filename: str = None):
                 break
 
     if filename:
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
             process_lines(lines, debug)
     else:
@@ -138,11 +139,11 @@ def run_powermetrics(debug: bool, filename: str = None):
                '-i', str(SETTINGS['powermetrics']),
                '-f', 'plist']
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-        process_lines(process.stdout, debug)
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True) as process:
+            process_lines(process.stdout, debug)
 
-        if stop_signal:
-            process.terminate()
+            if stop_signal:
+                process.terminate()
 
     # Make sure that all data has been uploaded when exiting
     upload_data_to_endpoint()
@@ -229,9 +230,9 @@ def parse_powermetrics_output(output: str):
                 data=plistlib.loads(data)
                 data['timezone'] = time.tzname
                 data['timestamp'] = int(data['timestamp'].replace(tzinfo=timezone.utc).timestamp() * 1e3)
-            except xml.parsers.expat.ExpatError:
+            except xml.parsers.expat.ExpatError as exc:
                 print(data)
-                raise xml.parsers.expat.ExpatError
+                raise exc
 
             compressed_data = zlib.compress(str(json.dumps(data)).encode())
             compressed_data_str = base64.b64encode(compressed_data).decode()
@@ -268,7 +269,7 @@ def parse_powermetrics_output(output: str):
                      cpu_energy_data['ane_energy'],
                      cpu_energy_data['energy_impact']))
 
-            for key in stats.keys():
+            for key in stats:
                 stats[key] += cpu_energy_data[key]
 
 
@@ -354,5 +355,3 @@ if __name__ == '__main__':
     run_powermetrics(args.debug, args.file)
 
     c.close()
-
-

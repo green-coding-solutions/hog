@@ -46,6 +46,7 @@ def sigint_handler(_, __):
     print('Received stop signal. Terminating all processes.')
 
 def siginfo_handler(_, __):
+    print(SETTINGS)
     print(stats)
 
 signal.signal(signal.SIGINT, sigint_handler)
@@ -66,7 +67,7 @@ default_settings = {
     'powermetrics': 5000,
     'upload_delta': 300,
     'api_url': 'https://api.green-coding.berlin/v1/hog/add',
-    'web_url': 'http://metrics.green-coding.berlin/hog-details.html?machine_id=',
+    'web_url': 'http://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
     'upload_data': True,
 }
 
@@ -86,18 +87,18 @@ SETTINGS = {}
 if config_path:
     config.read(config_path)
     SETTINGS = {
-        'powermetrics': config['DEFAULT'].get('powermetrics', default_settings['powermetrics']),
-        'upload_delta': config['DEFAULT'].get('upload_delta', default_settings['upload_delta']),
+        'powermetrics': int(config['DEFAULT'].get('powermetrics', default_settings['powermetrics'])),
+        'upload_delta': int(config['DEFAULT'].get('upload_delta', default_settings['upload_delta'])),
         'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
         'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
-        'upload_data': config['DEFAULT'].getboolean('upload_data', default_settings['upload_data']),
+        'upload_data': bool(config['DEFAULT'].getboolean('upload_data', default_settings['upload_data'])),
     }
 else:
     SETTINGS = default_settings
 
 
 
-machine_id = None
+machine_uuid = None
 
 conn = sqlite3.connect(DATABASE_FILE)
 c = conn.cursor()
@@ -149,13 +150,15 @@ def run_powermetrics(debug: bool, filename: str = None):
     upload_data_to_endpoint()
 
 def upload_data_to_endpoint():
+    retry_counter = 0
     while True:
-
+        retry_counter  += 1
         # We need to limit the amount of data here as otherwise the payload becomes to big
         c.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
         rows = c.fetchall()
 
-        if not rows:
+        if not rows or retry_counter > 3:
+            retry_counter = 0
             break
 
         payload = []
@@ -171,7 +174,7 @@ def upload_data_to_endpoint():
                 'time': time_val,
                 'data': data_val,
                 'settings': json.dumps(settings_upload),
-                'machine_id': machine_id,
+                'machine_uuid': machine_uuid,
                 'row_id': row_id
             })
 
@@ -188,16 +191,12 @@ def upload_data_to_endpoint():
                     conn.commit()
                 else:
                     print(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
-        except urllib.error.HTTPError as e:
-            print(f"HTTP error occurred while uploading: {payload}\n {e.reason}")
-        except ConnectionRefusedError:
-            pass
-        except urllib.error.URLError:
-            pass
-        except http.client.RemoteDisconnected:
-            pass
-        except ConnectionResetError:
-            pass
+        except (urllib.error.HTTPError,
+                ConnectionRefusedError,
+                urllib.error.URLError,
+                http.client.RemoteDisconnected,
+                ConnectionResetError):
+                break
 
 
 def find_top_processes(data: list):
@@ -281,13 +280,13 @@ def parse_powermetrics_output(output: str):
             conn.commit()
 
 def save_settings():
-    global machine_id
+    global machine_uuid
 
-    c.execute('SELECT machine_id, powermetrics, api_url, web_url, upload_delta, upload_data FROM settings ORDER BY time DESC LIMIT 1;')
+    c.execute('SELECT machine_uuid, powermetrics, api_url, web_url, upload_delta, upload_data FROM settings ORDER BY time DESC LIMIT 1;')
     result = c.fetchone()
 
     if result:
-        machine_id, last_powermetrics, last_api_url, last_web_url, last_upload_delta, last_upload_data = result
+        machine_uuid, last_powermetrics, last_api_url, last_web_url, last_upload_delta, last_upload_data = result
 
         if (last_powermetrics == SETTINGS['powermetrics'] and
             last_api_url.strip() == SETTINGS['api_url'].strip() and
@@ -296,13 +295,13 @@ def save_settings():
             last_upload_data == SETTINGS['upload_data']):
             return
     else:
-        machine_id = str(uuid.uuid1())
+        machine_uuid = str(uuid.uuid1())
 
     c.execute('''INSERT INTO settings
-            (time, machine_id, powermetrics, api_url, web_url, upload_delta, upload_data) VALUES
+            (time, machine_uuid, powermetrics, api_url, web_url, upload_delta, upload_data) VALUES
             (?, ?, ?, ?, ?, ?, ?)''', (
                 int(time.time()),
-                machine_id,
+                machine_uuid,
                 SETTINGS['powermetrics'],
                 SETTINGS['api_url'].strip(),
                 SETTINGS['web_url'].strip(),
@@ -328,7 +327,7 @@ if __name__ == '__main__':
             'powermetrics' : 1000,
             'upload_delta': 5,
             'api_url': 'http://api.green-coding.internal:9142/v1/hog/add',
-            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_id=',
+            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_uuid=',
             'upload_data': True,
         }
 
@@ -349,7 +348,7 @@ if __name__ == '__main__':
 
     if args.website:
         print('Please visit this url for detailed analytics:')
-        print(f"{SETTINGS['web_url']}{machine_id}")
+        print(f"{SETTINGS['web_url']}{machine_uuid}")
         sys.exit()
 
     run_powermetrics(args.debug, args.file)

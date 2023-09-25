@@ -59,7 +59,7 @@ For security reasons, files in /Library/LaunchDaemons/ should have their permiss
 and should not be writable by others.
 
 ```bash
-sed -i.bak "s|PATH_PLASE_CHANGE|$(pwd)|g" berlin.green-coding.hog.plist
+sed -i.bak "s|PATH_PLEASE_CHANGE|$(pwd)|g" berlin.green-coding.hog.plist
 sudo cp berlin.green-coding.hog.plist /Library/LaunchDaemons/
 
 sudo chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist

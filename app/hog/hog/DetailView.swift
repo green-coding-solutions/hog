@@ -58,14 +58,14 @@ private func isScriptRunningUsingPGrep(scriptName: String) -> Bool {
 private func isScriptRunningUsingDBCheck() -> Bool {
     var db: OpaquePointer?
     var running = false
-    
+
     if sqlite3_open(db_path, &db) != SQLITE_OK {
         print("error opening database")
         return false
     }
 
     var queryStatement: OpaquePointer?
-    
+
     let queryString = "SELECT COUNT (*) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - 60000);"
     if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
         while sqlite3_step(queryStatement) == SQLITE_ROW {
@@ -81,7 +81,7 @@ private func isScriptRunningUsingDBCheck() -> Bool {
 
     sqlite3_finalize(queryStatement)
     sqlite3_close(db)
-    
+
     return running
 }
 
@@ -92,12 +92,12 @@ public func getNameByAppName(appName: String) -> String {
             return app.localizedName ?? "No Data"
         }
     }
-    
+
     let components = appName.split(separator: ".")
     if let lastComponent = components.last {
         return String(lastComponent)
     }
-    
+
     return "No Data"
 }
 
@@ -114,14 +114,14 @@ public func getIconByAppName(appName: String) -> NSImage? {
 func getMachineId() -> String{
     var db: OpaquePointer?
     var machineId = ""
-        
+
     if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
         print("error opening database")
         return ""
     }
 
     var queryStatement: OpaquePointer?
-    let queryString = "SELECT machine_id FROM settings LIMIT 1"
+    let queryString = "SELECT machine_uuid FROM settings LIMIT 1"
 
     if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
         while sqlite3_step(queryStatement) == SQLITE_ROW {
@@ -136,7 +136,7 @@ func getMachineId() -> String{
 
     sqlite3_finalize(queryStatement)
     sqlite3_close(db)
-    
+
     return machineId
 }
 
@@ -148,7 +148,7 @@ func checkDB() -> Bool {
 class SettingsManager: ObservableObject {
     var lookBackTime:Int = 0
 
-    @Published var machine_id: String = "Loading ..."
+    @Published var machine_uuid: String = "Loading ..."
     @Published var powermetrics: Int = 0
     @Published var api_url: String = "Loading ..."
     @Published var web_url: String = "Loading ..."
@@ -177,10 +177,10 @@ class SettingsManager: ObservableObject {
             return
         }
 
-        let lastMeasurementQuery = "SELECT machine_id, powermetrics, api_url, web_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
+        let lastMeasurementQuery = "SELECT machine_uuid, powermetrics, api_url, web_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
         var queryStatement: OpaquePointer?
 
-        var new_machine_id = "Loading ..."
+        var new_machine_uuid = "Loading ..."
         var new_powermetrics: Int = 0
         var new_api_url = "Loading ..."
         var new_web_url = "Loading ..."
@@ -188,7 +188,7 @@ class SettingsManager: ObservableObject {
 
         if sqlite3_prepare_v2(db, lastMeasurementQuery, -1, &queryStatement, nil) == SQLITE_OK {
             if sqlite3_step(queryStatement) == SQLITE_ROW {
-                new_machine_id = String(cString: sqlite3_column_text(queryStatement, 0))
+                new_machine_uuid = String(cString: sqlite3_column_text(queryStatement, 0))
                 new_powermetrics = Int(sqlite3_column_int(queryStatement, 1))
                 new_api_url = String(cString: sqlite3_column_text(queryStatement, 2))
                 new_web_url = String(cString: sqlite3_column_text(queryStatement, 3))
@@ -196,7 +196,7 @@ class SettingsManager: ObservableObject {
             }
             sqlite3_finalize(queryStatement)
         }
-        
+
         let uploadCountQuery = "SELECT COUNT(*) FROM measurements WHERE uploaded = 0;"
         var new_upload_backlog: Int = 0
 
@@ -208,11 +208,11 @@ class SettingsManager: ObservableObject {
         } else {
             print("SELECT statement could not be prepared")
         }
-        
+
         sqlite3_close(db)
-        
+
         DispatchQueue.main.async {
-            self.machine_id = new_machine_id
+            self.machine_uuid = new_machine_uuid
             self.powermetrics = new_powermetrics
             self.api_url = new_api_url
             self.web_url = new_web_url
@@ -233,7 +233,7 @@ class ValueManager: ObservableObject {
     @Published var topApp: String = "Loading..."
     @Published var isLoading: Bool = true
 
-    
+
     enum ValueType {
         case float
         case string
@@ -252,12 +252,12 @@ class ValueManager: ObservableObject {
     func loadDataFrom() {
         var db: OpaquePointer?
 
-            
+
         if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
             print("error opening database")
             return
         }
-        
+
         var newEnergy: CGFloat = 0
         var energyQuery:String
         if self.lookBackTime == 0 {
@@ -291,7 +291,7 @@ class ValueManager: ObservableObject {
                 LIMIT 1; -- to get only the top name
                 """
         }
-        
+
         if let result: String = queryDatabase(db: db, query:topQuery, type: .string) {
             newTopApp = String(result)
         } else {
@@ -299,7 +299,7 @@ class ValueManager: ObservableObject {
         }
 
         let newScriptRunning = isScriptRunning(scriptName: "power_logger.py")
-        
+
         DispatchQueue.main.async {
             self.energy = newEnergy
             self.providerRunning = newScriptRunning
@@ -314,7 +314,7 @@ class ValueManager: ObservableObject {
 
     private func queryDatabase<T>(db: OpaquePointer?, query: String, type: ValueType) -> T? {
         var queryStatement: OpaquePointer?
-        
+
         if sqlite3_prepare_v2(db, query, -1, &queryStatement, nil) == SQLITE_OK {
             if sqlite3_step(queryStatement) == SQLITE_ROW {
                 switch type {
@@ -357,11 +357,11 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
     var endIndex: Index { lines.endIndex }
 
     @Published var isLoading: Bool = true
-    
+
     subscript(position: Index) -> Element {
         lines[position]
     }
-    
+
     func sort(using sortOrder: [KeyPathComparator<TopProcess>]) {
         // Implement sorting logic
         lines.sort { a, b in
@@ -378,7 +378,7 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
             return false
         }
     }
-    
+
     public func refreshData(lookBackTime: Int = 0) -> Void{
         self.isLoading = true
         self.lookBackTime = lookBackTime
@@ -389,16 +389,16 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
 
 
     private func loadDataFrom() {
-        
+
          var db: OpaquePointer?
-        
+
          if sqlite3_open(db_path, &db) != SQLITE_OK {
              print("error opening database")
              return
          }
 
         var queryStatement: OpaquePointer?
-        
+
         let queryString: String
         if self.lookBackTime == 0 {
             queryString = """
@@ -428,7 +428,7 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
                 }
                 let energy_impact = sqlite3_column_double(queryStatement, 1)
                 let cputime_per = sqlite3_column_int(queryStatement, 2)
-                
+
                 newLines.append(TopProcess(name: name, energy_impact: energy_impact, cputime_per: cputime_per))
             }
             DispatchQueue.main.async {
@@ -470,11 +470,11 @@ class ChartData: ObservableObject, RandomAccessCollection {
     var endIndex: Index { points.endIndex }
 
     @Published var isLoading: Bool = false
-    
+
     subscript(position: Index) -> Element {
         points[position]
     }
-    
+
     public func refreshData(lookBackTime: Int = 0) -> Void{
         self.isLoading = true
         self.lookBackTime = lookBackTime
@@ -488,16 +488,16 @@ class ChartData: ObservableObject, RandomAccessCollection {
     }
 
     private func loadDataFrom() {
-        
+
          var db: OpaquePointer? // SQLite database object
-        
+
         if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
              print("error opening database")
              return
          }
 
         var queryStatement: OpaquePointer?
-        
+
         let queryString: String
         if self.lookBackTime == 0 {
             queryString = "SELECT * FROM power_measurements;"
@@ -515,7 +515,7 @@ class ChartData: ObservableObject, RandomAccessCollection {
                 let time = Date(timeIntervalSince1970: id / 1000.0)
 
                 let dataPoint = DataPoint(id: id, combined_energy: combined_energy, cpu_energy: cpu_energy, gpu_energy: gpu_energy, ane_energy: ane_energy, time: time)
-                
+
                 newPoints.append(dataPoint)
             }
             DispatchQueue.main.async {
@@ -531,7 +531,7 @@ class ChartData: ObservableObject, RandomAccessCollection {
 
 struct PointsGraph: View {
     @ObservedObject var chartData: ChartData
-    
+
     init(chartData: ChartData) {
         self.chartData = chartData
     }
@@ -569,7 +569,7 @@ struct TopProcessTable: View {
         KeyPathComparator(\TopProcess.cputime_per, order: .forward),
     ]
     @Environment(\.colorScheme) var colorScheme
-    
+
     var tableColour: Color {
         return colorScheme == .dark ? Color.white : Color.primary
     }
@@ -594,9 +594,9 @@ struct TopProcessTable: View {
                                 .resizable()
                                 .frame(width: 15, height: 15)
                                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                            
+
                         }.width(20)
-                        
+
                         TableColumn("Name", value: \TopProcess.name)
                         TableColumn("Energy Impact", value: \TopProcess.energy_impact){ line in
                             Text(String(format: "%.0f", line.energy_impact))
@@ -622,9 +622,23 @@ struct TopProcessTable: View {
     }
 }
 
+struct TextInputView: View {
+    @Binding var text: String
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        VStack() {
+            TextField("Enter text here", text: $text)
+            Button("Done") {
+                isPresented = false
+            }
+        }
+        .padding()
+    }
+}
 
 struct DataView: View {
-    
+
     @State var chartData = ChartData()
     @State var lineData = TopProcessData()
     @ObservedObject var valueManager = ValueManager()
@@ -635,24 +649,27 @@ struct DataView: View {
 
     var lookBackTime: Int
 
-    
+    @State private var text: String = ""
+    @State private var isTextInputViewPresented: Bool = false
+
+
     init(lookBackTime: Int = 0) {
         self.lookBackTime = lookBackTime
         self.chartData.refreshData(lookBackTime: self.lookBackTime)
         self.lineData.refreshData(lookBackTime: self.lookBackTime)
         self.valueManager.refreshData(lookBackTime: self.lookBackTime)
     }
-    
+
     var body: some View {
         VStack{
-            
+
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("This is a very minimalistic overview of your energy usage.")
                 }
-                
+
                 Spacer(minLength: 10)
-                
+
                 Button(action: {
                     self.chartData.refreshData(lookBackTime: self.lookBackTime)
                     self.lineData.refreshData(lookBackTime: self.lookBackTime)
@@ -668,7 +685,7 @@ struct DataView: View {
 
             }
             VStack{
-                
+
                 VStack(spacing: 0) {
                     if valueManager.isLoading {
                         Text("Loading")
@@ -686,9 +703,21 @@ struct DataView: View {
                                 }
                             }
                         }
+                        HStack{
+                            TextBadge(title: "", color: Color("menuTab"), image: "person.crop.circle.badge.clock", value: "No project set")
+                            Button(action: {
+                                isTextInputViewPresented = true
+                            }) {
+                                Image(systemName: "pencil.circle")
+                            }
+                        }
+                        .sheet(isPresented: $isTextInputViewPresented) {
+                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
+                        }
+
                     }
                     Button(action: {
-                        if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_id)") {
+                        if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_uuid)") {
                             NSWorkspace.shared.open(url)
                         }
                     }) {
@@ -701,9 +730,9 @@ struct DataView: View {
 
                 PointsGraph(chartData: chartData)
                 TopProcessTable(tpData: lineData)
-                
+
             }
-            
+
         }.padding()
     }
 }
@@ -716,7 +745,7 @@ func ProcessBadge(title: String, color: Color, process: String)->some View {
             .font(.title2)
             .foregroundColor(color)
             .padding(10)
-        
+
         Text(getNameByAppName(appName: process))
             .font(.title2.bold())
 
@@ -747,7 +776,7 @@ func EnergyBadge(title: String, color: Color, image: String, value: CGFloat)->so
             .font(.title2)
             .foregroundColor(color)
             .padding(10)
-        
+
             Text(String(format: "%@", formatEnergy(value)))
                 .font(.title2.bold())
 
@@ -764,7 +793,7 @@ func TextBadge(title: String, color: Color, image: String, value: String)->some 
             .font(.title2)
             .foregroundColor(color)
             .padding(10)
-        
+
             Text(value)
                 .font(.title2.bold())
 
@@ -790,7 +819,7 @@ struct CopyPasteTextField: NSViewRepresentable {
 }
 
 struct OneView: View {
-    
+
     var body: some View {
         Text("1) Open Terminal").font(.headline)
         HStack{
@@ -806,7 +835,7 @@ struct OneView: View {
                     Text("Terminal")
                 }
             }
-            
+
             Text("If the button does not work please look under the Utilities folder in your Apps and start the terminal.")
         }.padding()
     }
@@ -817,10 +846,10 @@ struct TwoView: View {
 
     var body: some View {
         Text("2) Run this command").font(.headline)
-        
+
         HStack(spacing: 20) {
             CopyPasteTextField(text: $text)
-            
+
             Button("Copy Text") {
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
@@ -857,7 +886,7 @@ enum TabSelection: Hashable {
 class InstallViewModel: ObservableObject {
     @Published var renderToggle: Bool = false
     @Published var selectedTab: TabSelection = .last5Minutes
-    
+
     func toggleRender() {
         renderToggle.toggle()
     }
@@ -935,9 +964,9 @@ private struct SettingDetailView: View {
     }
 }
 struct SettingsView: View {
-    
+
     @ObservedObject var settingsManager = SettingsManager()
-   
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Settings")
@@ -945,7 +974,7 @@ struct SettingsView: View {
                 .bold()
             Text("These are the settings that are set by the power logger.\nPlease refer to https://github.com/green-coding-berlin/hog#settings")
             Divider().padding()
-            SettingDetailView(title: "Machine ID:", value: settingsManager.machine_id)
+            SettingDetailView(title: "Machine ID:", value: settingsManager.machine_uuid)
             SettingDetailView(title: "Powermetrics Intervall:", value: "\(settingsManager.powermetrics)")
             SettingDetailView(title: "Upload to URL:", value: settingsManager.api_url)
             SettingDetailView(title: "Web View URL:", value: settingsManager.web_url)
@@ -961,10 +990,10 @@ struct SettingsView: View {
 
 
 struct DetailView: View {
-    
+
     @ObservedObject var viewModel = InstallViewModel()
     @Environment(\.colorScheme) var colorScheme
-    
+
     var body: some View {
         if checkDB() {
             TabView(selection: $viewModel.selectedTab) {
@@ -973,19 +1002,19 @@ struct DetailView: View {
                         Label("Last 5 Minutes", systemImage: "list.dash")
                     }
                     .tag(TabSelection.last5Minutes)
-                
+
                 DataView(lookBackTime: 86400000)
                     .tabItem {
                         Label("Last 24 Hours", systemImage: "square.and.pencil")
                     }
                     .tag(TabSelection.last24Hours)
-                
+
                 DataView()
                     .tabItem {
                         Label("All Time", systemImage: "square.and.pencil")
                     }
                     .tag(TabSelection.allTime)
-                
+
                 SettingsView()
                     .tabItem {
                         Label("Settings", systemImage: "square.and.pencil")
@@ -997,7 +1026,7 @@ struct DetailView: View {
         } else {
             InstallView(viewModel: viewModel)
         }
-        
+
     }
 }
 

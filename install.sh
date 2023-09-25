@@ -47,7 +47,8 @@ chmod +x /usr/local/bin/hog/power_logger.py
 
 mv /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
 
-sed -i "s|PATH_PLASE_CHANGE|/usr/local/bin/hog/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
+
 chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
 chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist
 

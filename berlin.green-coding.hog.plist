@@ -7,7 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>PATH_PLASE_CHANGE/power_logger.py</string>
+        <string>PATH_PLEASE_CHANGE/power_logger.py</string>
     </array>
 
     <key>RunAtLoad</key>

@@ -28,7 +28,7 @@ def upgrade(connection):
 
     tbl_settings = '''CREATE TABLE IF NOT EXISTS settings
                 (time INT,
-                machine_id TEXT,
+                machine_uuid TEXT,
                 powermetrics INT,
                 api_url STRING,
                 web_url STRING,

@@ -89,7 +89,7 @@ sudo launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
 ### Settings
 
 It is possible to configure your own settings by using a `settings.ini` file in the same directory as the `power_logger.py`
-script or adding a `.hog_settings.ini` to your home folder. The home folder settings will be prioritized.
+script. Or adding a `hog_settings.ini` file to `/etc/`. This will file will be prioritized.
 
 Following keys are currently used:
 
@@ -108,7 +108,8 @@ The hog desktop app gives you analytics of the data that was recorded. Please mo
         new process which will all show up in the coalition. Sometimes a shell might turn up here. Please tell us so we can
         add this as an exception
 - `Energy Impact`: This is the value mac gives it's processes. The exact formula is not known but we know that quite some
-        factors are considered. For now this is the best value we've got 🫣
+        factors are considered [some details](https://blog.mozilla.org/nnethercote/2015/08/26/what-does-the-os-x-activity-monitors-energy-impact-actually-measure/).
+         For now this is the best value we've got 🫣
 - `AVG Cpu Time %`: This is how long this coalition has spent on the CPUs. We take a percentage which can be over 100% as
         the coalition could run on multiple cpus at the same time. So if a process takes up 100% of cpu time and runs on 4 cpus
         the time will be 400%.

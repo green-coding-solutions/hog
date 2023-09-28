@@ -19,11 +19,11 @@ def upgrade(connection):
                 cpu_energy INT,
                 gpu_energy INT,
                 ane_energy INT,
-                energy_impact REAL)'''
+                energy_impact INT)'''
     connection.execute(tbl_power_measurements)
 
     tbl_top_processes = '''CREATE TABLE IF NOT EXISTS top_processes
-                (time INT, name STRING, energy_impact REAL, cputime_per INT)'''
+                (time INT, name STRING, energy_impact INT, cputime_per INT)'''
     connection.execute(tbl_top_processes)
 
     tbl_settings = '''CREATE TABLE IF NOT EXISTS settings

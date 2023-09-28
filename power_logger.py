@@ -29,7 +29,7 @@ from libs import caribou
 stop_signal = False
 
 stats = {
-    'combined_power': 0,
+    'combined_energy': 0,
     'cpu_energy': 0,
     'gpu_energy': 0,
     'ane_energy': 0,
@@ -71,11 +71,10 @@ default_settings = {
     'upload_data': True,
 }
 
-home_dir = os.path.expanduser('~')
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
-if os.path.exists(os.path.join(home_dir, '.hog_settings.ini')):
-    config_path = os.path.join(home_dir, '.hog_settings.ini')
+if os.path.exists('/etc/hog_settings.ini'):
+    config_path = '/etc/hog_settings.ini'
 elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
     config_path = os.path.join(script_dir, 'settings.ini')
 else:
@@ -185,7 +184,7 @@ def upload_data_to_endpoint():
                                         method='POST')
         try:
             with urllib.request.urlopen(req) as response:
-                if response.status == 200:
+                if response.status == 204:
                     for p in payload:
                         c.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
                     conn.commit()
@@ -199,7 +198,7 @@ def upload_data_to_endpoint():
                 break
 
 
-def find_top_processes(data: list):
+def find_top_processes(data: list, elapsed_ns:int):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
     new_data = []
     for coalition in data:
@@ -211,8 +210,10 @@ def find_top_processes(data: list):
     for p in sorted(new_data, key=lambda k: k['energy_impact'], reverse=True)[:10]:
         yield{
             'name': p['name'],
-            'energy_impact': p['energy_impact'],
-            'cputime_ns': p['cputime_ns']
+            # Energy_impact and cputime are broken so we need to use the per_s and convert them
+            # Check the https://www.green-coding.berlin/blog/ for details
+            'energy_impact': round((p['energy_impact_per_s'] / 1_000_000_000) * elapsed_ns),
+            'cputime_ns': ((p['cputime_ms_per_s'] * 1_000_000)  / 1_000_000_000) * elapsed_ns,
         }
 
 
@@ -240,29 +241,30 @@ def parse_powermetrics_output(output: str):
                     (data['timestamp'], compressed_data_str))
 
             cpu_energy_data = {}
+            energy_impact = round(data['all_tasks'].get('energy_impact_per_s') * data['elapsed_ns'] / 1_000_000_000)
             if 'ane_energy' in data['processor']:
                 cpu_energy_data = {
-                    'combined_power': int(data['processor'].get('combined_power', 0) * data['elapsed_ns'] / 1_000_000_000.0),
-                    'cpu_energy': int(data['processor'].get('cpu_energy', 0)),
-                    'gpu_energy': int(data['processor'].get('gpu_energy', 0)),
-                    'ane_energy': int(data['processor'].get('ane_energy', 0)),
-                    'energy_impact': data['all_tasks'].get('energy_impact'),
+                    'combined_energy': round(data['processor'].get('combined_power', 0) * data['elapsed_ns'] / 1_000_000_000.0),
+                    'cpu_energy': round(data['processor'].get('cpu_energy', 0)),
+                    'gpu_energy': round(data['processor'].get('gpu_energy', 0)),
+                    'ane_energy': round(data['processor'].get('ane_energy', 0)),
+                    'energy_impact': energy_impact,
                 }
             elif 'package_joules' in data['processor']:
                 # Intel processors report in joules/ watts and not mJ
                 cpu_energy_data = {
-                    'combined_power': int(data['processor'].get('package_joules', 0) * 1_000),
-                    'cpu_energy': int(data['processor'].get('cpu_joules', 0) * 1_000),
-                    'gpu_energy': int(data['processor'].get('igpu_watts', 0) * data['elapsed_ns'] / 1_000_000_000.0 * 1_000),
+                    'combined_energy': round(data['processor'].get('package_joules', 0) * 1_000),
+                    'cpu_energy': round(data['processor'].get('cpu_joules', 0) * 1_000),
+                    'gpu_energy': round(data['processor'].get('igpu_watts', 0) * data['elapsed_ns'] / 1_000_000_000.0 * 1_000),
                     'ane_energy': 0,
-                    'energy_impact': data['all_tasks'].get('energy_impact'),
+                    'energy_impact': energy_impact,
                 }
 
             c.execute('''INSERT INTO power_measurements
                       (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact) VALUES
                       (?, ?, ?, ?, ?, ?)''',
                     (data['timestamp'],
-                     cpu_energy_data['combined_power'],
+                     cpu_energy_data['combined_energy'],
                      cpu_energy_data['cpu_energy'],
                      cpu_energy_data['gpu_energy'],
                      cpu_energy_data['ane_energy'],
@@ -272,7 +274,7 @@ def parse_powermetrics_output(output: str):
                 stats[key] += cpu_energy_data[key]
 
 
-            for process in find_top_processes(data['coalitions']):
+            for process in find_top_processes(data['coalitions'], data['elapsed_ns']):
                 cpu_per = int(process['cputime_ns'] / data['elapsed_ns'] * 100)
                 c.execute('INSERT INTO top_processes (time, name, energy_impact, cputime_per) VALUES (?, ?, ?, ?)',
                     (data['timestamp'], process['name'], process['energy_impact'], cpu_per))

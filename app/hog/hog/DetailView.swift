@@ -228,14 +228,14 @@ class SettingsManager: ObservableObject {
 class ValueManager: ObservableObject {
     var lookBackTime:Int = 0
 
-    @Published var energy: CGFloat = 0
+    @Published var energy: Int64 = 0
     @Published var providerRunning: Bool = false
     @Published var topApp: String = "Loading..."
     @Published var isLoading: Bool = true
 
 
     enum ValueType {
-        case float
+        case int
         case string
     }
 
@@ -258,14 +258,14 @@ class ValueManager: ObservableObject {
             return
         }
 
-        var newEnergy: CGFloat = 0
+        var newEnergy: Int64 = 0
         var energyQuery:String
         if self.lookBackTime == 0 {
             energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements;"
         }else{
             energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
         }
-        if let result: CGFloat = queryDatabase(db: db, query:energyQuery, type: .float) {
+        if let result: Int64 = queryDatabase(db: db, query:energyQuery, type: .int) {
             newEnergy = result
         }
 
@@ -318,8 +318,8 @@ class ValueManager: ObservableObject {
         if sqlite3_prepare_v2(db, query, -1, &queryStatement, nil) == SQLITE_OK {
             if sqlite3_step(queryStatement) == SQLITE_ROW {
                 switch type {
-                case .float:
-                    let value = CGFloat(sqlite3_column_double(queryStatement, 0))
+                case .int:
+                    let value = sqlite3_column_int64(queryStatement, 0)
                     sqlite3_finalize(queryStatement)
                     return value as? T
                 case .string:
@@ -338,7 +338,7 @@ class ValueManager: ObservableObject {
 struct TopProcess: Codable, Identifiable {
     let id: UUID = UUID()  // Add this line if you want a unique identifier
     let name: String
-    let energy_impact: Double
+    let energy_impact: Int64
     let cputime_per: Int32
 
     enum CodingKeys: String, CodingKey {
@@ -426,7 +426,7 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
                 if let namePointer = sqlite3_column_text(queryStatement, 0) {
                     name = String(cString: namePointer)
                 }
-                let energy_impact = sqlite3_column_double(queryStatement, 1)
+                let energy_impact = sqlite3_column_int64(queryStatement, 1)
                 let cputime_per = sqlite3_column_int(queryStatement, 2)
 
                 newLines.append(TopProcess(name: name, energy_impact: energy_impact, cputime_per: cputime_per))
@@ -447,11 +447,11 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
 
 
 struct DataPoint: Codable, Identifiable {
-    let id: Double
-    let combined_energy: Double
-    let cpu_energy: Double
-    let gpu_energy: Double
-    let ane_energy: Double
+    let id: Int64
+    let combined_energy: Int64
+    let cpu_energy: Int64
+    let gpu_energy: Int64
+    let ane_energy: Int64
     var time: Date?
 
     enum CodingKeys: String, CodingKey {
@@ -507,12 +507,12 @@ class ChartData: ObservableObject, RandomAccessCollection {
         if sqlite3_prepare_v2(db, queryString, -1, &queryStatement, nil) == SQLITE_OK {
             var newPoints: [DataPoint] = []
             while sqlite3_step(queryStatement) == SQLITE_ROW {
-                let id = sqlite3_column_double(queryStatement, 0)
-                let combined_energy = sqlite3_column_double(queryStatement, 2)
-                let cpu_energy = sqlite3_column_double(queryStatement, 3)
-                let gpu_energy = sqlite3_column_double(queryStatement, 4)
-                let ane_energy = sqlite3_column_double(queryStatement, 5)
-                let time = Date(timeIntervalSince1970: id / 1000.0)
+                let id = sqlite3_column_int64(queryStatement, 0)
+                let combined_energy = sqlite3_column_int64(queryStatement, 2)
+                let cpu_energy = sqlite3_column_int64(queryStatement, 3)
+                let gpu_energy = sqlite3_column_int64(queryStatement, 4)
+                let ane_energy = sqlite3_column_int64(queryStatement, 5)
+                let time = Date(timeIntervalSince1970: Double(id) / 1000.0)
 
                 let dataPoint = DataPoint(id: id, combined_energy: combined_energy, cpu_energy: cpu_energy, gpu_energy: gpu_energy, ane_energy: ane_energy, time: time)
 
@@ -599,7 +599,7 @@ struct TopProcessTable: View {
 
                         TableColumn("Name", value: \TopProcess.name)
                         TableColumn("Energy Impact", value: \TopProcess.energy_impact){ line in
-                            Text(String(format: "%.0f", line.energy_impact))
+                            Text(String(line.energy_impact))
                         }
                         TableColumn("AVG CPU time %", value: \TopProcess.cputime_per){ line in
                             Text(String(line.cputime_per))
@@ -696,25 +696,24 @@ struct DataView: View {
                             TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "All measurement systems are functional")
                         } else {
                             HStack{
-                                TextBadge(title: "", color: Color("red"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
+                                TextBadge(title: "", color: Color("redish"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
                                 Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
                                     Image(systemName: "questionmark.circle.fill")
                                         .font(.system(size: 24))
                                 }
                             }
                         }
-                        HStack{
-                            TextBadge(title: "", color: Color("menuTab"), image: "person.crop.circle.badge.clock", value: "No project set")
-                            Button(action: {
-                                isTextInputViewPresented = true
-                            }) {
-                                Image(systemName: "pencil.circle")
-                            }
-                        }
-                        .sheet(isPresented: $isTextInputViewPresented) {
-                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
-                        }
-
+//                        HStack{
+//                            TextBadge(title: "", color: Color("menuTab"), image: "person.crop.circle.badge.clock", value: "No project set")
+//                            Button(action: {
+//                                isTextInputViewPresented = true
+//                            }) {
+//                                Image(systemName: "pencil.circle")
+//                            }
+//                        }
+//                        .sheet(isPresented: $isTextInputViewPresented) {
+//                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
+//                        }
                     }
                     Button(action: {
                         if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_uuid)") {
@@ -756,8 +755,8 @@ func ProcessBadge(title: String, color: Color, process: String)->some View {
     .frame(maxWidth: .infinity, alignment: .leading)
 }
 
-func formatEnergy(_ mJ: Double) -> String {
-    let joules = mJ / 1000.0
+func formatEnergy(_ mJ: Int64) -> String {
+    let joules = Double(mJ) / 1000.0
     let wattHours = joules / 3600.0
     let wattMinutes = joules / 60.0
 
@@ -769,8 +768,9 @@ func formatEnergy(_ mJ: Double) -> String {
 }
 
 
+
 @ViewBuilder
-func EnergyBadge(title: String, color: Color, image: String, value: CGFloat)->some View {
+func EnergyBadge(title: String, color: Color, image: String, value: Int64)->some View {
     HStack {
         Image(systemName: image)
             .font(.title2)

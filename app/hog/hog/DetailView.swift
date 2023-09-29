@@ -661,7 +661,7 @@ struct DataView: View {
     }
 
     var body: some View {
-        VStack{
+        VStack(){
 
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
@@ -721,7 +721,7 @@ struct DataView: View {
                         }
                     }) {
                         Text("View Detailed Analytics")
-                            .padding(20)
+                            .padding(10)
                     }
 
 
@@ -900,6 +900,13 @@ struct StepsView: View {
                 .scaledToFit()
                 .frame(width: 50, height: 50)
             Text("Welcome to the hog").font(.title)
+            Spacer()
+            Button(action: {
+                exit(0)
+            }) {
+                Image(systemName: "x.circle")
+            }
+
         }
         Text("It looks like you haven't installed the program that we need to collect the power measurments. Please follow these steps:")
         Divider()

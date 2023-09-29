@@ -7,29 +7,25 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Power Hog</string>
+	<string>widget</string>
 	<key>CFBundleExecutable</key>
-	<string>hog</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
-	<key>CFBundleIconName</key>
-	<string>AppIcon</string>
+	<string>widgetExtension</string>
 	<key>CFBundleIdentifier</key>
-	<string>berlin.green-coding.hog</string>
+	<string>berlin.green-coding.hog.widget</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>hog</string>
+	<string>widgetExtension</string>
 	<key>CFBundlePackageType</key>
-	<string>APPL</string>
+	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.2</string>
+	<string>1.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>1</string>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
@@ -46,13 +42,12 @@
 	<string>1500</string>
 	<key>DTXcodeBuild</key>
 	<string>15A240d</string>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>13.3</string>
-	<key>LSUIElement</key>
-	<true/>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<string>14.0</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
 </dict>
 </plist>

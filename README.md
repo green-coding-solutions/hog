@@ -136,3 +136,9 @@ The hog is developed to not need any dependencies.
 
 - Logo from https://pixabay.com/de/vectors/schwein-schweinchen-ferkel-2660356/
 - Caribou (Public Domain) lib from https://raw.githubusercontent.com/clutchski/caribou/master/caribou.py
+
+## Misc
+
+- If you can't see the hog logo in the menu bar because of the notch there are multiple solutions.
+  - you can use a tool like https://www.macbartender.com/Bartender4/
+  - you can use the the command `$ sudo /usr/local/bin/hog/power_logger.py -w` to display the url.

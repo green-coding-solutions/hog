@@ -24,6 +24,7 @@ from pathlib import Path
 
 from libs import caribou
 
+VERSION = '0.2.1'
 
 # Shared variable to signal the thread to stop
 stop_signal = False
@@ -67,7 +68,7 @@ default_settings = {
     'powermetrics': 5000,
     'upload_delta': 300,
     'api_url': 'https://api.green-coding.berlin/v1/hog/add',
-    'web_url': 'http://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
+    'web_url': 'https://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
     'upload_data': True,
 }
 
@@ -168,6 +169,7 @@ def upload_data_to_endpoint():
             # We don't need this in the DB on the server
             del settings_upload['api_url']
             del settings_upload['web_url']
+            settings_upload['client_version'] = VERSION
 
             payload.append({
                 'time': time_val,
@@ -176,7 +178,6 @@ def upload_data_to_endpoint():
                 'machine_uuid': machine_uuid,
                 'row_id': row_id
             })
-
         request_data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(url=SETTINGS['api_url'],
                                         data=request_data,

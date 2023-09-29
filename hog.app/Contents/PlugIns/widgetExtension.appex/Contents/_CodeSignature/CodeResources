@@ -4,49 +4,29 @@
 <dict>
 	<key>files</key>
 	<dict>
-		<key>Resources/AppIcon.icns</key>
+		<key>Resources/Metadata.appintents/extract.actionsdata</key>
 		<data>
-		IEqC35733lGzlCi4rzsjyYyMkSI=
+		wqXj5Me4Mq7gT2GtWItAHpugKDs=
 		</data>
-		<key>Resources/Assets.car</key>
+		<key>Resources/Metadata.appintents/version.json</key>
 		<data>
-		JEs/wJ+/rf/gdTqgVGb2dIewI48=
-		</data>
-		<key>Resources/demo_db.db</key>
-		<data>
-		NmamsuHtbF3MJSq/eA2hH4xS5xc=
+		5gmL5nUt9kmH2N/JaR6rntCwxLY=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>PlugIns/widgetExtension.appex</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			q14NRvIGozs0CRJpPS+8F/3Xhbs=
-			</data>
-			<key>requirement</key>
-			<string>identifier "berlin.green-coding.hog.widget" and anchor apple generic and certificate leaf[subject.CN] = "Apple Development: Dietger Hoffmann (899DULE8SZ)" and certificate 1[field.1.2.840.113635.100.6.2.1] /* exists */</string>
-		</dict>
-		<key>Resources/AppIcon.icns</key>
+		<key>Resources/Metadata.appintents/extract.actionsdata</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Yb6WRPtOGgUUy+4O9EwusPhUQRBGkQGdB2SjY4vJGAQ=
+			OUFgh/B4rNjHUO/jU58ff7aWhMUijgxUL52gZXpj+qE=
 			</data>
 		</dict>
-		<key>Resources/Assets.car</key>
+		<key>Resources/Metadata.appintents/version.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			bNknJFZh9mi83dgVX4S0/Oc6jH24x4RUXrzI0TNCbHI=
-			</data>
-		</dict>
-		<key>Resources/demo_db.db</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			4GA8WkYJ3DAZ/cliiqHc7iXRieF/BtZ+YXzOW1z3MsI=
+			cG6iFb/rAMRIDAfpRQoWlGyJwUT9CrZkacy6zW5zUGU=
 			</data>
 		</dict>
 	</dict>

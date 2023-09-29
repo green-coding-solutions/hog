@@ -33,19 +33,26 @@ install_xcode_clt() {
 # Call the function to ensure Xcode Command Line Tools are installed
 install_xcode_clt
 
+hog_running_output=$(launchctl list | grep berlin.green-coding.hog)
+
+if [[ ! -z "$hog_running_output" ]]; then
+    launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
+    rm -f /tmp/latest_release.zip
+fi
+
 ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
 curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
 mkdir -p /usr/local/bin/hog
 
-unzip /tmp/latest_release.zip -d /usr/local/bin/hog/
+unzip /tmp/latest_release.zip -o -u -d /usr/local/bin/hog/
 rm /tmp/latest_release.zip
 
 chmod 755 /usr/local/bin/hog
 chmod -R 755 /usr/local/bin/hog/
 chmod +x /usr/local/bin/hog/power_logger.py
 
-mv /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
+mv -f /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
 
 sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
 

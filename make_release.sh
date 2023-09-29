@@ -17,4 +17,4 @@ zip -r hog_power_logger.zip "${files_to_zip[@]}" "${exclude_patterns[@]}"
 
 echo "Files have been zipped into hog_power_logger.zip"
 echo "Now create a new release on github and then delete the zip"
-grep 'VERSION' power_logger.py
+grep 'VERSION =' power_logger.py

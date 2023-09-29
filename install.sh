@@ -33,7 +33,7 @@ install_xcode_clt() {
 # Call the function to ensure Xcode Command Line Tools are installed
 install_xcode_clt
 
-hog_running_output=$(launchctl list | grep berlin.green-coding.hog)
+hog_running_output=$(launchctl list | grep berlin.green-coding.hog || echo "")
 
 if [[ ! -z "$hog_running_output" ]]; then
     launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist

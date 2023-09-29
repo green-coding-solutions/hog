@@ -45,7 +45,7 @@ curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
 mkdir -p /usr/local/bin/hog
 
-unzip /tmp/latest_release.zip -o -u -d /usr/local/bin/hog/
+unzip -o -u /tmp/latest_release.zip -d /usr/local/bin/hog/
 rm /tmp/latest_release.zip
 
 chmod 755 /usr/local/bin/hog

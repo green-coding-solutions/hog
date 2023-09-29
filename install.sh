@@ -33,7 +33,7 @@ install_xcode_clt() {
 # Call the function to ensure Xcode Command Line Tools are installed
 install_xcode_clt
 
-ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip’)
+ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
 curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
 mkdir -p /usr/local/bin/hog

@@ -10,7 +10,7 @@
 		</data>
 		<key>Resources/Assets.car</key>
 		<data>
-		JEs/wJ+/rf/gdTqgVGb2dIewI48=
+		pOV/a5sBHrQiQU52+y3ipZJqRWE=
 		</data>
 		<key>Resources/demo_db.db</key>
 		<data>
@@ -19,15 +19,6 @@
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>PlugIns/widgetExtension.appex</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			q14NRvIGozs0CRJpPS+8F/3Xhbs=
-			</data>
-			<key>requirement</key>
-			<string>identifier "berlin.green-coding.hog.widget" and anchor apple generic and certificate leaf[subject.CN] = "Apple Development: Dietger Hoffmann (899DULE8SZ)" and certificate 1[field.1.2.840.113635.100.6.2.1] /* exists */</string>
-		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
@@ -39,7 +30,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			bNknJFZh9mi83dgVX4S0/Oc6jH24x4RUXrzI0TNCbHI=
+			yl68HJmBHl3ZMRFphzDpJwXm3dMVkSxAhIXwqx+7+jA=
 			</data>
 		</dict>
 		<key>Resources/demo_db.db</key>

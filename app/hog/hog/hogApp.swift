@@ -9,12 +9,12 @@ import SwiftUI
 
 @main
 struct hogApp: App {
+    @State var observer: NSKeyValueObservation?
+
     var body: some Scene {
-
-        MenuBarExtra("QuickView", image: "logo") {
-            DetailView().frame(
-                    minWidth: 600, minHeight: 850)
-
+        MenuBarExtra("QuickView", image: "logo_bw_bar") {
+            DetailView()
+                .frame(minWidth: 600, minHeight: 850)
         }.menuBarExtraStyle(WindowMenuBarExtraStyle())
     }
 }

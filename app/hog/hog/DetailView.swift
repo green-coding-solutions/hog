@@ -13,6 +13,7 @@ import SwiftUI
 import SQLite3
 import Charts
 import AppKit
+import Combine
 
 var db_path = "/Library/Application Support/berlin.green-coding.hog/db.db"
 
@@ -145,93 +146,42 @@ func checkDB() -> Bool {
     return fileManager.fileExists(atPath: db_path)
 }
 
-class SettingsManager: ObservableObject {
+
+class LoadingClass {
+    
     var lookBackTime:Int = 0
 
-    @Published var machine_uuid: String = "Loading ..."
-    @Published var powermetrics: Int = 0
-    @Published var api_url: String = "Loading ..."
-    @Published var web_url: String = "Loading ..."
-    @Published var upload_data: Bool = true
-
-    @Published var upload_backlog: Int = 0
-
+    
     @Published var isLoading: Bool = false
+    
+    func loadDataFrom() {
+        fatalError("loadDataFrom() must be overridden in subclasses")
+    }
 
-    init(){
+    public func refreshData(lookBackTime: Int = 0) -> Void{
+        if self.isLoading == true {
+            return
+        }
+
         self.isLoading = true
+        self.lookBackTime = lookBackTime
 
         DispatchQueue.global(qos: .userInitiated).async {
             self.loadDataFrom()
             DispatchQueue.main.async {
                 self.isLoading = false
             }
+
         }
     }
-
-    func loadDataFrom() {
-        var db: OpaquePointer?
-
-        if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
-            print("error opening database")
-            return
-        }
-
-        let lastMeasurementQuery = "SELECT machine_uuid, powermetrics, api_url, web_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
-        var queryStatement: OpaquePointer?
-
-        var new_machine_uuid = "Loading ..."
-        var new_powermetrics: Int = 0
-        var new_api_url = "Loading ..."
-        var new_web_url = "Loading ..."
-        var upload_data = true
-
-        if sqlite3_prepare_v2(db, lastMeasurementQuery, -1, &queryStatement, nil) == SQLITE_OK {
-            if sqlite3_step(queryStatement) == SQLITE_ROW {
-                new_machine_uuid = String(cString: sqlite3_column_text(queryStatement, 0))
-                new_powermetrics = Int(sqlite3_column_int(queryStatement, 1))
-                new_api_url = String(cString: sqlite3_column_text(queryStatement, 2))
-                new_web_url = String(cString: sqlite3_column_text(queryStatement, 3))
-                upload_data = sqlite3_column_int(queryStatement, 4) != 0 // assuming it's stored as 0 for false, non-0 for true
-            }
-            sqlite3_finalize(queryStatement)
-        }
-
-        let uploadCountQuery = "SELECT COUNT(*) FROM measurements WHERE uploaded = 0;"
-        var new_upload_backlog: Int = 0
-
-        if sqlite3_prepare_v2(db, uploadCountQuery, -1, &queryStatement, nil) == SQLITE_OK {
-            if sqlite3_step(queryStatement) == SQLITE_ROW {
-                new_upload_backlog = Int(sqlite3_column_int(queryStatement, 0))
-            }
-            sqlite3_finalize(queryStatement) // Always finalize your statement when done
-        } else {
-            print("SELECT statement could not be prepared")
-        }
-
-        sqlite3_close(db)
-
-        DispatchQueue.main.async {
-            self.machine_uuid = new_machine_uuid
-            self.powermetrics = new_powermetrics
-            self.api_url = new_api_url
-            self.web_url = new_web_url
-            self.upload_data = upload_data
-            self.upload_backlog = new_upload_backlog
-        }
-
-    }
-
 }
 
-
-class ValueManager: ObservableObject {
-    var lookBackTime:Int = 0
+class ValueManager: LoadingClass, ObservableObject{
+    
 
     @Published var energy: Int64 = 0
     @Published var providerRunning: Bool = false
     @Published var topApp: String = "Loading..."
-    @Published var isLoading: Bool = true
 
 
     enum ValueType {
@@ -239,17 +189,7 @@ class ValueManager: ObservableObject {
         case string
     }
 
-    public func refreshData(lookBackTime: Int = 0) -> Void{
-
-        self.isLoading = true
-        self.lookBackTime = lookBackTime
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.loadDataFrom()
-        }
-    }
-
-    func loadDataFrom() {
+    override func loadDataFrom() {
         var db: OpaquePointer?
 
 
@@ -304,7 +244,6 @@ class ValueManager: ObservableObject {
             self.energy = newEnergy
             self.providerRunning = newScriptRunning
             self.topApp = newTopApp
-            self.isLoading = false
         }
 
         sqlite3_close(db)
@@ -335,6 +274,7 @@ class ValueManager: ObservableObject {
         return nil
     }
 }
+
 struct TopProcess: Codable, Identifiable {
     let id: UUID = UUID()  // Add this line if you want a unique identifier
     let name: String
@@ -346,8 +286,7 @@ struct TopProcess: Codable, Identifiable {
     }
 }
 
-class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
-    var lookBackTime:Int = 0
+class TopProcessData: LoadingClass, Identifiable, ObservableObject, RandomAccessCollection {
     typealias Element = TopProcess
     typealias Index = Array<TopProcess>.Index
 
@@ -355,8 +294,6 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
 
     var startIndex: Index { lines.startIndex }
     var endIndex: Index { lines.endIndex }
-
-    @Published var isLoading: Bool = true
 
     subscript(position: Index) -> Element {
         lines[position]
@@ -379,16 +316,8 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
         }
     }
 
-    public func refreshData(lookBackTime: Int = 0) -> Void{
-        self.isLoading = true
-        self.lookBackTime = lookBackTime
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.loadDataFrom()
-        }
-    }
 
-
-    private func loadDataFrom() {
+    override func loadDataFrom() {
 
          var db: OpaquePointer?
 
@@ -433,8 +362,6 @@ class TopProcessData: Identifiable, ObservableObject, RandomAccessCollection {
             }
             DispatchQueue.main.async {
                 self.lines = newLines
-                self.isLoading = false
-
             }
         }
 
@@ -459,8 +386,7 @@ struct DataPoint: Codable, Identifiable {
     }
 }
 
-class ChartData: ObservableObject, RandomAccessCollection {
-    var lookBackTime:Int = 0
+class ChartData: LoadingClass, ObservableObject, RandomAccessCollection {
     typealias Element = DataPoint
     typealias Index = Array<DataPoint>.Index
 
@@ -469,25 +395,12 @@ class ChartData: ObservableObject, RandomAccessCollection {
     var startIndex: Index { points.startIndex }
     var endIndex: Index { points.endIndex }
 
-    @Published var isLoading: Bool = false
-
     subscript(position: Index) -> Element {
         points[position]
     }
 
-    public func refreshData(lookBackTime: Int = 0) -> Void{
-        self.isLoading = true
-        self.lookBackTime = lookBackTime
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.loadDataFrom()
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
-        }
-    }
-
-    private func loadDataFrom() {
+    override func loadDataFrom() {
 
          var db: OpaquePointer? // SQLite database object
 
@@ -544,18 +457,14 @@ struct PointsGraph: View {
                 .padding()
         } else {
             VStack {
-                if chartData.isEmpty {
-                    Text("No Data! Please enable provider app.").font(.largeTitle)
-                }else{
-                    Chart(chartData) {
-                        BarMark(
-                            x: .value("Time", $0.time!),
-                            y: .value("Energy", $0.combined_energy)
-                        )
-                    }
-                    .chartYAxisLabel("mJ")
-                    .chartXAxisLabel("Time")
+                Chart(chartData) {
+                    BarMark(
+                        x: .value("Time", $0.time!),
+                        y: .value("Energy", $0.combined_energy)
+                    )
                 }
+                .chartYAxisLabel("mJ")
+                .chartXAxisLabel("Time")
             }
         }
     }
@@ -637,102 +546,123 @@ struct TextInputView: View {
     }
 }
 
-struct DataView: View {
 
-    @State var chartData = ChartData()
-    @State var lineData = TopProcessData()
-    @ObservedObject var valueManager = ValueManager()
+struct DataView: View {
+    
+    @StateObject var chartData = ChartData()
+    @StateObject var lineData = TopProcessData()
+    @StateObject var valueManager = ValueManager()
+    @StateObject var settingsManager = SettingsManager()
+    
     @State private var isHovering = false
     @State private var refreshFlag = false
 
-    var settingsManager = SettingsManager()
-
     var lookBackTime: Int
+    var viewModel: ViewModel
+    var whoAmI: TabSelection
+
 
     @State private var text: String = ""
     @State private var isTextInputViewPresented: Bool = false
 
-
-    init(lookBackTime: Int = 0) {
-        self.lookBackTime = lookBackTime
+    func refresh() {
         self.chartData.refreshData(lookBackTime: self.lookBackTime)
         self.lineData.refreshData(lookBackTime: self.lookBackTime)
         self.valueManager.refreshData(lookBackTime: self.lookBackTime)
     }
 
+    init(lookBackTime: Int = 0, viewModel: ViewModel, whoAmI: TabSelection) {
+        self.lookBackTime = lookBackTime
+        self.viewModel = viewModel
+        self.whoAmI = whoAmI
+    }
+
     var body: some View {
         VStack(){
-
-            HStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("This is a very minimalistic overview of your energy usage.")
+            if chartData.isLoading == false && chartData.isEmpty {
+                Text("No Data for this timeframe!").font(.largeTitle)
+                Text("Please make sure the data collection app is running! For more details please check out the documentation under:")
+                Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
+                    Text("https://github.com/green-coding-berlin/hog#power-logger")
                 }
-
-                Spacer(minLength: 10)
-
-                Button(action: {
-                    self.chartData.refreshData(lookBackTime: self.lookBackTime)
-                    self.lineData.refreshData(lookBackTime: self.lookBackTime)
-                    self.valueManager.refreshData(lookBackTime: self.lookBackTime)
-                }) {
-                    Image(systemName: "goforward")
-                }
-                Button(action: {
-                    exit(0)
-                }) {
-                    Image(systemName: "x.circle")
-                }
-
-            }
-            VStack{
-
-                VStack(spacing: 0) {
-                    if valueManager.isLoading {
-                        Text("Loading")
-                    } else {
-                        ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
-                        EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy)
-                        if valueManager.providerRunning {
-                            TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "All measurement systems are functional")
-                        } else {
-                            HStack{
-                                TextBadge(title: "", color: Color("redish"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
-                                Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
-                                    Image(systemName: "questionmark.circle.fill")
-                                        .font(.system(size: 24))
-                                }
-                            }
-                        }
-//                        HStack{
-//                            TextBadge(title: "", color: Color("menuTab"), image: "person.crop.circle.badge.clock", value: "No project set")
-//                            Button(action: {
-//                                isTextInputViewPresented = true
-//                            }) {
-//                                Image(systemName: "pencil.circle")
-//                            }
-//                        }
-//                        .sheet(isPresented: $isTextInputViewPresented) {
-//                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
-//                        }
+            }else{
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("This is a very minimalistic overview of your energy usage.")
+                    }
+                    
+                    Spacer(minLength: 10)
+                    
+                    Button(action: {
+                        self.refresh()
+                    }) {
+                        Image(systemName: "goforward")
                     }
                     Button(action: {
-                        if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_uuid)") {
-                            NSWorkspace.shared.open(url)
-                        }
+                        exit(0)
                     }) {
-                        Text("View Detailed Analytics")
-                            .padding(10)
+                        Image(systemName: "x.circle")
                     }
-
-
+                    
                 }
-
-                PointsGraph(chartData: chartData)
-                TopProcessTable(tpData: lineData)
-
+                VStack{
+                    
+                    VStack(spacing: 0) {
+                        if valueManager.isLoading {
+                            Text("Loading")
+                        } else {
+                            ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
+                            EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy)
+                            if valueManager.providerRunning {
+                                TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "All measurement systems are functional")
+                            } else {
+                                HStack{
+                                    TextBadge(title: "", color: Color("redish"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
+                                    Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
+                                        Image(systemName: "questionmark.circle.fill")
+                                            .font(.system(size: 24))
+                                    }
+                                }
+                            }
+                            //                        HStack{
+                            //                            TextBadge(title: "", color: Color("menuTab"), image: "person.crop.circle.badge.clock", value: "Project: Hog Development")
+                            //                            Button(action: {
+                            //                                isTextInputViewPresented = true
+                            //                            }) {
+                            //                                Image(systemName: "pencil.circle")
+                            //                            }
+                            //
+                            //                        }
+                            //                        .sheet(isPresented: $isTextInputViewPresented) {
+                            //                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
+                            //                        }
+                        }
+                        Button(action: {
+                            if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_uuid)") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            Text("View Detailed Analytics")
+                                .padding(10)
+                        }
+                        
+                        
+                    }
+                    
+                    PointsGraph(chartData: chartData)
+                    TopProcessTable(tpData: lineData)
+                    
+                }
             }
 
-        }.padding()
+        }
+        .padding()
+        .onReceive(viewModel.$selectedTab) { tab in
+            if tab == self.whoAmI {
+                self.refresh()
+            }
+        }
+
     }
 }
 
@@ -803,78 +733,17 @@ func TextBadge(title: String, color: Color, image: String, value: String)->some 
     .frame(maxWidth: .infinity, alignment: .leading)
 }
 
-struct CopyPasteTextField: NSViewRepresentable {
-    @Binding var text: String
 
-    func makeNSView(context: Context) -> NSTextField {
-        let textField = NSTextField()
-        textField.isBordered = true
-        textField.backgroundColor = NSColor.textBackgroundColor
-        return textField
-    }
+class WindowFocusTracker: ObservableObject {
+    @Published var isKeyWindow: Bool = false
+    private var cancellables: Set<AnyCancellable> = []
 
-    func updateNSView(_ nsView: NSTextField, context: Context) {
-        nsView.stringValue = text
-    }
-}
-
-struct OneView: View {
-
-    var body: some View {
-        Text("1) Open Terminal").font(.headline)
-        HStack{
-            Button(action: {
-                let workspace = NSWorkspace.shared
-                if let url = URL(string: "file:///System/Applications/Utilities/Terminal.app") {
-                    let configuration = NSWorkspace.OpenConfiguration()
-                    workspace.open(url, configuration: configuration, completionHandler: nil)
-                }
-            }) {
-                HStack {
-                    Image(systemName: "terminal") // This is a symbolic representation, actual symbol might differ.
-                    Text("Terminal")
-                }
+    init() {
+        NSApplication.shared.publisher(for: \.keyWindow)
+            .sink { [weak self] keyWindow in
+                self?.isKeyWindow = (keyWindow != nil)
             }
-
-            Text("If the button does not work please look under the Utilities folder in your Apps and start the terminal.")
-        }.padding()
-    }
-}
-
-struct TwoView: View {
-    @State private var text = "curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash"
-
-    var body: some View {
-        Text("2) Run this command").font(.headline)
-
-        HStack(spacing: 20) {
-            CopyPasteTextField(text: $text)
-
-            Button("Copy Text") {
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(text, forType: .string)
-            }
-        }.padding()
-    }
-}
-struct ThreeView: View {
-    @State private var showInfo: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("3) You will need to enter your password and install xcode tools.").font(.headline)
-                Button(action: {
-                    showInfo.toggle()
-                }) {
-                    Image(systemName: "info.circle")
-                }
-            }
-            if showInfo {
-                Text("We are very aware that this is a risky operation. The problem is that the program needs to run as root and also the installer needs to activate the program.")
-            }
-        }
+            .store(in: &cancellables)
     }
 }
 
@@ -883,7 +752,7 @@ enum TabSelection: Hashable {
 }
 
 
-class InstallViewModel: ObservableObject {
+class ViewModel: ObservableObject {
     @Published var renderToggle: Bool = false
     @Published var selectedTab: TabSelection = .last5Minutes
 
@@ -892,148 +761,53 @@ class InstallViewModel: ObservableObject {
     }
 }
 
-struct StepsView: View {
-    var body: some View {
-        HStack{
-            Image("logo2")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 50, height: 50)
-            Text("Welcome to the hog").font(.title)
-            Spacer()
-            Button(action: {
-                exit(0)
-            }) {
-                Image(systemName: "x.circle")
-            }
-
-        }
-        Text("It looks like you haven't installed the program that we need to collect the power measurments. Please follow these steps:")
-        Divider()
-        OneView()
-        TwoView()
-        ThreeView()
-        Text("4) All done. Now check").font(.headline)
-
-    }
-}
-
-
-struct InstallView: View {
-    @ObservedObject var viewModel: InstallViewModel
-
-    @State private var showingAlert = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) { // Set alignment to .leading
-
-            StepsView()
-            Button("Re-check if the power data is reported") {
-                viewModel.toggleRender()
-
-            }.padding()
-            Divider()
-            Text("If you just want to see the interface you can also load some demo data visualises what is possible with the hog.")
-            Button("View with demo data") {
-                guard let sourceURL = Bundle.main.url(forResource: "demo_db", withExtension: "db") else {
-                    print("Source file not found!")
-                    return
-                }
-                db_path = sourceURL.path()
-                viewModel.selectedTab = .allTime
-                viewModel.toggleRender()
-            }
-            .alert(isPresented: $showingAlert) {
-                Alert(title: Text("There was an error copying demo data."),
-                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-berlin/hog/issues/new"),
-                      dismissButton: .default(Text("Got it!")))
-            }
-            Divider()
-            Text("You can also read our documentation for all the details under: https://github.com/green-coding-berlin/hog")
-
-        }.padding()
-
-    }
-
-}
-
-private struct SettingDetailView: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        Group {
-            Text(title)
-                .bold()
-            Text(value)
-                .padding(.bottom, 10)
-        }
-    }
-}
-struct SettingsView: View {
-
-    @ObservedObject var settingsManager = SettingsManager()
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text("Settings")
-                .font(.headline)
-                .bold()
-            Text("These are the settings that are set by the power logger.\nPlease refer to https://github.com/green-coding-berlin/hog#settings")
-            Divider().padding()
-            SettingDetailView(title: "Machine ID:", value: settingsManager.machine_uuid)
-            SettingDetailView(title: "Powermetrics Intervall:", value: "\(settingsManager.powermetrics)")
-            SettingDetailView(title: "Upload to URL:", value: settingsManager.api_url)
-            SettingDetailView(title: "Web View URL:", value: settingsManager.web_url)
-            SettingDetailView(title: "Upload data:", value: settingsManager.upload_data ? "Yes" : "No")
-            SettingDetailView(title: "Upload Backlog Count:", value: "\(settingsManager.upload_backlog)")
-
-        }
-        .padding()
-    }
-}
-
-
-
-
 struct DetailView: View {
-
-    @ObservedObject var viewModel = InstallViewModel()
+    
+    @ObservedObject var windowFocusTracker = WindowFocusTracker()
+    @ObservedObject var viewModel = ViewModel()
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        if checkDB() {
-            TabView(selection: $viewModel.selectedTab) {
-                DataView(lookBackTime: 300000)
-                    .tabItem {
-                        Label("Last 5 Minutes", systemImage: "list.dash")
-                    }
-                    .tag(TabSelection.last5Minutes)
-
-                DataView(lookBackTime: 86400000)
-                    .tabItem {
-                        Label("Last 24 Hours", systemImage: "square.and.pencil")
-                    }
-                    .tag(TabSelection.last24Hours)
-
-                DataView()
-                    .tabItem {
-                        Label("All Time", systemImage: "square.and.pencil")
-                    }
-                    .tag(TabSelection.allTime)
-
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "square.and.pencil")
-                    }
-                    .tag(TabSelection.settings)
+        if checkDB(){
+            if windowFocusTracker.isKeyWindow{
+                ReleaseCheckerView()
+                TabView(selection: $viewModel.selectedTab) {
+                    DataView(lookBackTime: 300000, viewModel: viewModel, whoAmI: TabSelection.last5Minutes)
+                        .tabItem {
+                            Label("Last 5 Minutes", systemImage: "list.dash")
+                        }
+                        .tag(TabSelection.last5Minutes)
+                    
+                    
+                    DataView(lookBackTime: 86400000, viewModel: viewModel, whoAmI: TabSelection.last24Hours)
+                        .tabItem {
+                            Label("Last 24 Hours", systemImage: "square.and.pencil")
+                        }
+                        .tag(TabSelection.last24Hours)
+                    
+                    
+                    DataView(viewModel: viewModel, whoAmI: TabSelection.allTime)
+                        .tabItem {
+                            Label("All Time", systemImage: "square.and.pencil")
+                        }
+                        .tag(TabSelection.allTime)
+                    
+                    
+                    SettingsView(viewModel: viewModel, whoAmI: TabSelection.settings)
+                        .tabItem {
+                            Label("Settings", systemImage: "square.and.pencil")
+                        }
+                        .tag(TabSelection.settings)
+                    
+                }
+                .padding()
+                .background(colorScheme == .light ? Color.white : Color.black)
+            }else{
+                Text("Please return focus to window to display data. You can do this by clicking here.")
             }
-            .padding()
-            .background(colorScheme == .light ? Color.white : Color.black)
         } else {
             InstallView(viewModel: viewModel)
         }
-
     }
 }
 

@@ -33,12 +33,17 @@ install_xcode_clt() {
 # Call the function to ensure Xcode Command Line Tools are installed
 install_xcode_clt
 
+# Checks if the hog is already running
 hog_running_output=$(launchctl list | grep berlin.green-coding.hog || echo "")
 
 if [[ ! -z "$hog_running_output" ]]; then
     launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
     rm -f /tmp/latest_release.zip
 fi
+
+###
+# Downloads and moves the code
+###
 
 ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
 curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
@@ -51,6 +56,36 @@ rm /tmp/latest_release.zip
 chmod 755 /usr/local/bin/hog
 chmod -R 755 /usr/local/bin/hog/
 chmod +x /usr/local/bin/hog/power_logger.py
+
+###
+# Writing the config file
+###
+
+read -p "In order for the app to work with all features please allow us to upload some data. [Y/n]: " upload_data
+upload_data=${upload_data:-Y}
+upload_data=$(echo "$upload_data" | tr '[:upper:]' '[:lower:]')
+
+if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
+    upload_flag="true"
+else
+    upload_flag="false"
+fi
+
+cat > /etc/hog_settings.ini << EOF
+[DEFAULT]
+api_url = https://api.green-coding.berlin/v1/hog/add
+web_url = https://metrics.green-coding.berlin/hog-details.html?machine_uuid=
+upload_delta = 300
+powermetrics = 5000
+upload_data = $upload_flag
+resolve_coalitions=com.googlecode.iterm2,com.apple.Terminal,com.vix.cron
+EOF
+
+echo "Configuration written to /etc/hog_settings.ini"
+
+###
+# Setting up the background demon
+###
 
 mv -f /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
 

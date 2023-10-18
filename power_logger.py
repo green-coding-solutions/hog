@@ -19,15 +19,21 @@ import urllib.request
 import configparser
 import sqlite3
 import http
+import threading
+import logging
+import select
+
 from datetime import timezone
 from pathlib import Path
 
 from libs import caribou
 
-VERSION = '0.2.1'
+VERSION = '0.3'
+
+LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 
 # Shared variable to signal the thread to stop
-stop_signal = False
+stop_signal = threading.Event()
 
 stats = {
     'combined_energy': 0,
@@ -39,16 +45,17 @@ stats = {
 
 def sigint_handler(_, __):
     global stop_signal
-    if stop_signal:
+    if stop_signal.is_set():
         # If you press CTR-C the second time we bail
-        sys.exit()
+        sys.exit(2)
 
-    stop_signal = True
-    print('Received stop signal. Terminating all processes.')
+    stop_signal.set()
+    logging.info('❗ Terminating all processes. Please be patient, this might take a few seconds.')
 
 def siginfo_handler(_, __):
     print(SETTINGS)
     print(stats)
+    logging.info(f"System stats:\n{stats}\n{SETTINGS}")
 
 signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
@@ -70,6 +77,7 @@ default_settings = {
     'api_url': 'https://api.green-coding.berlin/v1/hog/add',
     'web_url': 'https://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
     'upload_data': True,
+    'resolve_coalitions': ['com.googlecode.iterm2,com.apple.Terminal,com.vix.cron']
 }
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -92,74 +100,98 @@ if config_path:
         'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
         'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
         'upload_data': bool(config['DEFAULT'].getboolean('upload_data', default_settings['upload_data'])),
+        'resolve_coalitions': config['DEFAULT'].get('resolve_coalitions', default_settings['resolve_coalitions']),
     }
+    SETTINGS['resolve_coalitions'] = [x.strip().lower() for x in SETTINGS['resolve_coalitions'].split(',')]
 else:
     SETTINGS = default_settings
-
-
 
 machine_uuid = None
 
 conn = sqlite3.connect(DATABASE_FILE)
 c = conn.cursor()
 
+# This is a replacement for time.sleep as we need to check periodically if we need to exit
+# We choose a max exit time of one second as we don't want to wake up too often.
+def sleeper(stop_event, duration):
+    end_time = time.time() + duration
+    while time.time() < end_time:
+        if stop_event.is_set():
+            return
+        time.sleep(1)
 
-def run_powermetrics(debug: bool, filename: str = None):
 
-    def process_lines(lines, debug):
-        buffer = []
-        last_upload_time = time.time()
-        for line in lines:
-            line = line.strip().replace('&', '&amp;')
-            buffer.append(line)
-            if line == '</plist>':
-                parse_powermetrics_output(''.join(buffer))
+def run_powermetrics(local_stop_signal, filename: str = None):
+    buffer = []
 
-                if debug:
-                    print(stats)
-                    sys.stdout.flush()
+    def process_line(line, buffer):
+        line = line.strip().replace('&', '&amp;')
+        buffer.append(line)
 
-                buffer = []
+        if line == '</plist>':
+            logging.debug('Parsing new input')
+            parse_powermetrics_output(''.join(buffer))
+            buffer.clear()
 
-                if SETTINGS['upload_data']:
-                    current_time = time.time()
-                    if current_time - last_upload_time >= SETTINGS['upload_delta']:
-                        upload_data_to_endpoint()
-                        last_upload_time = current_time
-
-            if stop_signal:
-                break
+            logging.info(stats)
 
     if filename:
+        logging.info(f"Reading file {filename}")
         with open(filename, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-            process_lines(lines, debug)
+            for line in file.readlines():
+                process_line(line, buffer)
+
     else:
         cmd = ['powermetrics',
                '--show-all',
                '-i', str(SETTINGS['powermetrics']),
                '-f', 'plist']
 
+        logging.info(f"Starting powermetrics process: {' '.join(cmd)}")
+
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True) as process:
-            process_lines(process.stdout, debug)
 
-            if stop_signal:
-                process.terminate()
+            os.set_blocking(process.stdout.fileno(), False)
 
-    # Make sure that all data has been uploaded when exiting
-    upload_data_to_endpoint()
+            partial_buffer = ''
+            while not local_stop_signal.is_set():
+                # Make sure that the timeout is greater than the output is coming in
+                rlist, _, _ = select.select([process.stdout], [], [], int(SETTINGS['powermetrics'] / 1_000 * 2 ))
+                if rlist:
+                    # This is a little hacky. The problem is that select just reads data and doesn't respect the lines
+                    # so it happens that we read in the middle of a line.
+                    data = rlist[0].read()
+                    data = partial_buffer + data
+                    lines = data.splitlines()
+                    try:
+                        if not data.endswith('\n'):
+                            partial_buffer = lines.pop()
+                        else:
+                            partial_buffer = ''
 
-def upload_data_to_endpoint():
-    retry_counter = 0
-    while True:
-        retry_counter  += 1
+                        for line in lines:
+                            process_line(line, buffer)
+                    except IndexError:
+                        # This happens when the process is killed before we exit here so stop_signal should be set. If not
+                        # there is a problem with powermetrics and we should report and exit.
+                        if not local_stop_signal.is_set():
+                            logging.error('The pipe to powermetrics has been closed. Exiting')
+                            local_stop_signal.set()
+
+
+def upload_data_to_endpoint(local_stop_signal):
+    thread_conn = sqlite3.connect(DATABASE_FILE)
+    tc = thread_conn.cursor()
+
+    while not local_stop_signal.is_set():
         # We need to limit the amount of data here as otherwise the payload becomes to big
-        c.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
-        rows = c.fetchall()
+        tc.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
+        rows = tc.fetchall()
 
-        if not rows or retry_counter > 3:
-            retry_counter = 0
-            break
+        # When everything is uploaded we sleep
+        if not rows:
+            sleeper(local_stop_signal, SETTINGS['upload_delta'])
+            continue
 
         payload = []
         for row in rows:
@@ -178,32 +210,44 @@ def upload_data_to_endpoint():
                 'machine_uuid': machine_uuid,
                 'row_id': row_id
             })
+
         request_data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(url=SETTINGS['api_url'],
                                         data=request_data,
                                         headers={'content-type': 'application/json'},
                                         method='POST')
+
+        logging.info(f"Uploading {len(payload)} rows to: {SETTINGS['api_url']}")
+
         try:
             with urllib.request.urlopen(req) as response:
                 if response.status == 204:
                     for p in payload:
-                        c.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
-                    conn.commit()
+                        tc.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
+                    thread_conn.commit()
+                    logging.debug('Upload 👌')
                 else:
-                    print(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
+                    logging.info(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
+                    sleeper(local_stop_signal, SETTINGS['upload_delta']) # Sleep if there is an error
+
         except (urllib.error.HTTPError,
                 ConnectionRefusedError,
                 urllib.error.URLError,
                 http.client.RemoteDisconnected,
-                ConnectionResetError):
-                break
+                ConnectionResetError) as exc:
+            logging.debug(f"Upload exception: {exc}")
+            sleeper(local_stop_signal, SETTINGS['upload_delta']) # Sleep if there is an error
+
+    thread_conn.close()
+
+
 
 
 def find_top_processes(data: list, elapsed_ns:int):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
     new_data = []
     for coalition in data:
-        if coalition['name'] == 'com.googlecode.iterm2' or coalition['name'].strip() == '':
+        if coalition['name'].lower() in SETTINGS['resolve_coalitions'] or coalition['name'].strip() == '':
             new_data.extend(coalition['tasks'])
         else:
             new_data.append(coalition)
@@ -232,7 +276,7 @@ def parse_powermetrics_output(output: str):
                 data['timezone'] = time.tzname
                 data['timestamp'] = int(data['timestamp'].replace(tzinfo=timezone.utc).timestamp() * 1e3)
             except xml.parsers.expat.ExpatError as exc:
-                print(data)
+                logging.error(f"XML Error:\n{data}")
                 raise exc
 
             compressed_data = zlib.compress(str(json.dumps(data)).encode())
@@ -281,6 +325,7 @@ def parse_powermetrics_output(output: str):
                     (data['timestamp'], process['name'], process['energy_impact'], cpu_per))
 
             conn.commit()
+            logging.debug('Data added to the DB')
 
 def save_settings():
     global machine_uuid
@@ -296,7 +341,7 @@ def save_settings():
             last_web_url.strip() == SETTINGS['web_url'].strip() and
             last_upload_delta == SETTINGS['upload_delta'] and
             last_upload_data == SETTINGS['upload_data']):
-            return
+            return False
     else:
         machine_uuid = str(uuid.uuid1())
 
@@ -313,19 +358,72 @@ def save_settings():
             ))
 
     conn.commit()
+    logging.debug(f"Saved Settings:\n{SETTINGS}")
 
+    return True
+
+
+def check_DB(local_stop_signal):
+    # The powermetrics script should return ever SETTINGS['powermetrics'] ms but because of the way we batch things
+    # we will not get values every n ms so we have quite a big value here.
+    # powermetrics = 5000 ms in production and 1000 in dev mode
+
+    interval_sec = SETTINGS['powermetrics'] * 20  / 1_000
+
+    # We first sleep for quite some time to give the program some time to add data to the DB
+    sleeper(local_stop_signal, interval_sec)
+
+    thread_conn = sqlite3.connect(DATABASE_FILE)
+    tc = thread_conn.cursor()
+
+    while not local_stop_signal.is_set():
+        n_ago = int((time.time() - interval_sec) * 1_000)
+
+        tc.execute('SELECT MAX(time) FROM measurements')
+        result = tc.fetchone()
+
+        if result and result[0]:
+            if result[0] < n_ago:
+                logging.error('No new data in DB. Exiting to be restarted by the os')
+                local_stop_signal.set()
+        else:
+            logging.error('We are not getting values from the DB for checker thread.')
+
+        logging.debug('DB Check ✅')
+        sleeper(local_stop_signal, interval_sec)
+
+    thread_conn.close()
+
+
+def is_power_logger_running():
+    try:
+        subprocess.check_output(['pgrep', '-f', sys.argv[0]])
+        logging.error(f"There is already a {sys.argv[0]} process running! Maybe check launchctl?")
+        sys.exit(4)
+    except subprocess.CalledProcessError:
+        return False
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=
-                                     '''A powermetrics wrapper that does simple parsing and writes to a file.''')
-    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug/ development mode')
+                                     '''
+                                     A power collection script that records a multitude of metrics and saves them to
+                                     a database. Also uploads the data to a server.
+                                     Exit codes:
+                                        1 - run as root
+                                        2 - force quit
+                                        3 - db not updated
+                                        4 - already a power_logger process is running
+                                     ''')
+    parser.add_argument('-d', '--dev', action='store_true', help='Enable development mode api endpoints and log level.')
     parser.add_argument('-w', '--website', action='store_true', help='Shows the website URL')
     parser.add_argument('-f', '--file', type=str, help='Path to the input file')
+    parser.add_argument('-v', '--log-level', choices=LOG_LEVELS, default='info', help='Logging level (debug, info, warning, error, critical)')
+    parser.add_argument('-o', '--output-file', type=str, help='Path to the output log file.')
 
     args = parser.parse_args()
 
-    if args.debug:
+    if args.dev:
         SETTINGS = {
             'powermetrics' : 1000,
             'upload_delta': 5,
@@ -333,10 +431,24 @@ if __name__ == '__main__':
             'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_uuid=',
             'upload_data': True,
         }
+        args.log_level = 'debug'
+
+    log_level = getattr(logging, args.log_level.upper())
+
+    if args.output_file:
+        logging.basicConfig(filename=args.output_file, level=log_level, format='[%(levelname)s] %(asctime)s - %(message)s')
+    else:
+        logging.basicConfig(level=log_level, format='[%(levelname)s] %(asctime)s - %(message)s')
+
+    logging.debug('Program started 🎉')
+    logging.debug(f"Using db: {DATABASE_FILE}")
+
 
     if os.geteuid() != 0:
-        print('The script needs to be run as root!')
+        logging.error('The script needs to be run as root!')
         sys.exit(1)
+
+    is_power_logger_running()
 
     # Make sure that everyone can write to the DB
     os.chmod(DATABASE_FILE, stat.S_IRUSR | stat.S_IWUSR |
@@ -347,13 +459,24 @@ if __name__ == '__main__':
     # Make sure the DB is migrated
     caribou.upgrade(DATABASE_FILE, MIGRATIONS_PATH)
 
-    save_settings()
+    if not save_settings():
+        logging.debug(f"Setting: {SETTINGS}")
+
 
     if args.website:
         print('Please visit this url for detailed analytics:')
         print(f"{SETTINGS['web_url']}{machine_uuid}")
-        sys.exit()
+        sys.exit(0)
 
-    run_powermetrics(args.debug, args.file)
+    if SETTINGS['upload_data']:
+        upload_thread = threading.Thread(target=upload_data_to_endpoint, args=(stop_signal,))
+        upload_thread.start()
+        logging.debug('Upload thread started')
+
+    db_checker_thread = threading.Thread(target=check_DB, args=(stop_signal,), daemon=True)
+    db_checker_thread.start()
+    logging.debug('DB checker thread started')
+
+    run_powermetrics(stop_signal, args.file)
 
     c.close()

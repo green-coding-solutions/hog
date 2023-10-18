@@ -97,6 +97,8 @@ Following keys are currently used:
 - `upload_delta`: This is the time delta data should be uploaded in seconds.
 - `api_url`: The url endpoint the data should be uploaded to. You can use the https://github.com/green-coding-berlin/green-metrics-tool if you want but also write/ use your own backend.
 - `web_url`: The url where the analytics can be found. We will append the machine ID to this so make sure the end of the string is a `=`
+- `resolve_coalitions`: The way macOS works is that it looks as apps and not processes. So it can happen that when you look at your power data you see your shell as the main power hog.
+        This is because your shell has probably spawn the process that is using a lot of resources. Please add the name of the coalition to this list to resolve this error.
 
 ## The desktop App
 
@@ -120,6 +122,17 @@ All data is saved in an sqlite database that is located under:
 
 ```bash
 /Library/Application Support/berlin.green-coding.hog/db.db
+```
+
+## Updating
+
+We currently don't support an automatic update. You will have to:
+
+- Download the current app and move it into your Applications folder from https://github.com/green-coding-berlin/hog/releases . The file will be called `hog.app.zip`
+- Rerun in the install script which will overwrite any custom changes you have made!
+```
+sudo mv /etc/hog_settings.ini /etc/hog_settings.ini.back
+curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash
 ```
 
 ## Contributing

@@ -43,7 +43,7 @@ You can use the `-f` parameter with a filename. Please submit the data in the pl
 This is a description on how to set everything up if you did a git clone. You can also just do
 
 ```
-curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)"
 ```
 which will do the whole install for you.
 
@@ -132,7 +132,7 @@ We currently don't support an automatic update. You will have to:
 - Rerun in the install script which will overwrite any custom changes you have made!
 ```
 sudo mv /etc/hog_settings.ini /etc/hog_settings.ini.back
-curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)"
 ```
 
 ## Contributing
@@ -140,6 +140,35 @@ curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/instal
 PRs are always welcome. Feel free to drop us an email or look into the issues.
 
 The hog is developed to not need any dependencies.
+
+## Debugging
+
+It sometimes help to enable debugging for the logger process you can do this by editing the `/Library/LaunchDaemons/berlin.green-coding.hog.plist` file:
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>berlin.green-coding.hog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/hog/power_logger.py</string>
+        <string>-v</string>
+        <string>debug</string>
+        <string>-o</string>
+        <string>/tmp/hog.log</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+```
+Please remember that the log file can become quite big. The hog does not use logrotate or similar out of the box.
 
 ## Screenshots
 

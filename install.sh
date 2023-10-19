@@ -61,14 +61,18 @@ chmod +x /usr/local/bin/hog/power_logger.py
 # Writing the config file
 ###
 
-read -p "In order for the app to work with all features please allow us to upload some data. [Y/n]: " upload_data
-upload_data=${upload_data:-Y}
-upload_data=$(echo "$upload_data" | tr '[:upper:]' '[:lower:]')
+if [[ -t 0 ]]; then  # Check if input is from a terminal
+    read -p "In order for the app to work with all features please allow us to upload some data. [Y/n]: " upload_data
+    upload_data=${upload_data:-Y}
+    upload_data=$(echo "$upload_data" | tr '[:upper:]' '[:lower:]')
 
-if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
-    upload_flag="true"
+    if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
+        upload_flag="true"
+    else
+        upload_flag="false"
+    fi
 else
-    upload_flag="false"
+    upload_flag="true"
 fi
 
 cat > /etc/hog_settings.ini << EOF
@@ -89,7 +93,7 @@ echo "Configuration written to /etc/hog_settings.ini"
 
 mv -f /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
 
-sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog/|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
 
 chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
 chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist

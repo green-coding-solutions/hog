@@ -47,7 +47,7 @@ struct CopyPasteTextField: NSViewRepresentable {
 
 
 struct TwoView: View {
-    @State private var text = "curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh | sudo bash"
+    @State private var text = "sudo bash -c \"$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)\""
 
     var body: some View {
         Text("2) Run this command").font(.headline)

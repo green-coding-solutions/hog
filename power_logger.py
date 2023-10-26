@@ -50,7 +50,7 @@ def sigint_handler(_, __):
         sys.exit(2)
 
     stop_signal.set()
-    logging.info('❗ Terminating all processes. Please be patient, this might take a few seconds.')
+    logging.info('Terminating all processes. Please be patient, this might take a few seconds.')
 
 def siginfo_handler(_, __):
     print(SETTINGS)
@@ -225,7 +225,7 @@ def upload_data_to_endpoint(local_stop_signal):
                     for p in payload:
                         tc.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
                     thread_conn.commit()
-                    logging.debug('Upload 👌')
+                    logging.debug('Uploaded.')
                 else:
                     logging.info(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
                     sleeper(local_stop_signal, SETTINGS['upload_delta']) # Sleep if there is an error
@@ -389,7 +389,7 @@ def check_DB(local_stop_signal):
         else:
             logging.error('We are not getting values from the DB for checker thread.')
 
-        logging.debug('DB Check ✅')
+        logging.debug('DB Check')
         sleeper(local_stop_signal, interval_sec)
 
     thread_conn.close()
@@ -440,7 +440,7 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=log_level, format='[%(levelname)s] %(asctime)s - %(message)s')
 
-    logging.debug('Program started 🎉')
+    logging.debug('Program started.')
     logging.debug(f"Using db: {DATABASE_FILE}")
 
 

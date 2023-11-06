@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# pylint: disable=W0603,W0602
+# pylint: disable=W0603,W0602,W1203,W0702
 import json
 import subprocess
 import time
@@ -35,6 +35,27 @@ LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 # Shared variable to signal the thread to stop
 stop_signal = threading.Event()
 
+class SharedTime:
+    def __init__(self):
+        self._time = time.time()
+        self._lock = threading.Lock()
+
+    def set_tick(self):
+        with self._lock:
+            self._time = time.time()
+
+    def get_tick(self):
+        with self._lock:
+            return self._time
+
+
+
+APP_NAME = 'berlin.green-coding.hog'
+APP_SUPPORT_PATH = Path(f"/Library/Application Support/{APP_NAME}")
+APP_SUPPORT_PATH.mkdir(parents=True, exist_ok=True)
+
+DATABASE_FILE = APP_SUPPORT_PATH / 'db.db'
+
 stats = {
     'combined_energy': 0,
     'cpu_energy': 0,
@@ -42,6 +63,16 @@ stats = {
     'ane_energy': 0,
     'energy_impact': 0,
 }
+
+MIGRATIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
+
+global_settings = {}
+
+machine_uuid = None
+
+conn = sqlite3.connect(DATABASE_FILE)
+c = conn.cursor()
+
 
 def sigint_handler(_, __):
     global stop_signal
@@ -53,9 +84,9 @@ def sigint_handler(_, __):
     logging.info('Terminating all processes. Please be patient, this might take a few seconds.')
 
 def siginfo_handler(_, __):
-    print(SETTINGS)
+    print(global_settings)
     print(stats)
-    logging.info(f"System stats:\n{stats}\n{SETTINGS}")
+    logging.info(f"System stats:\n{stats}\n{global_settings}")
 
 signal.signal(signal.SIGINT, sigint_handler)
 signal.signal(signal.SIGTERM, sigint_handler)
@@ -63,53 +94,6 @@ signal.signal(signal.SIGTERM, sigint_handler)
 signal.signal(signal.SIGINFO, siginfo_handler)
 
 
-APP_NAME = 'berlin.green-coding.hog'
-app_support_path = Path(f"/Library/Application Support/{APP_NAME}")
-app_support_path.mkdir(parents=True, exist_ok=True)
-
-DATABASE_FILE = app_support_path / 'db.db'
-
-MIGRATIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
-
-default_settings = {
-    'powermetrics': 5000,
-    'upload_delta': 300,
-    'api_url': 'https://api.green-coding.berlin/v1/hog/add',
-    'web_url': 'https://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
-    'upload_data': True,
-    'resolve_coalitions': ['com.googlecode.iterm2,com.apple.Terminal,com.vix.cron']
-}
-
-script_dir = os.path.dirname(os.path.realpath(__file__))
-
-if os.path.exists('/etc/hog_settings.ini'):
-    config_path = '/etc/hog_settings.ini'
-elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
-    config_path = os.path.join(script_dir, 'settings.ini')
-else:
-    config_path = None
-
-config = configparser.ConfigParser()
-
-SETTINGS = {}
-if config_path:
-    config.read(config_path)
-    SETTINGS = {
-        'powermetrics': int(config['DEFAULT'].get('powermetrics', default_settings['powermetrics'])),
-        'upload_delta': int(config['DEFAULT'].get('upload_delta', default_settings['upload_delta'])),
-        'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
-        'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
-        'upload_data': bool(config['DEFAULT'].getboolean('upload_data', default_settings['upload_data'])),
-        'resolve_coalitions': config['DEFAULT'].get('resolve_coalitions', default_settings['resolve_coalitions']),
-    }
-    SETTINGS['resolve_coalitions'] = [x.strip().lower() for x in SETTINGS['resolve_coalitions'].split(',')]
-else:
-    SETTINGS = default_settings
-
-machine_uuid = None
-
-conn = sqlite3.connect(DATABASE_FILE)
-c = conn.cursor()
 
 # This is a replacement for time.sleep as we need to check periodically if we need to exit
 # We choose a max exit time of one second as we don't want to wake up too often.
@@ -144,7 +128,7 @@ def run_powermetrics(local_stop_signal, filename: str = None):
     else:
         cmd = ['powermetrics',
                '--show-all',
-               '-i', str(SETTINGS['powermetrics']),
+               '-i', str(global_settings['powermetrics']),
                '-f', 'plist']
 
         logging.info(f"Starting powermetrics process: {' '.join(cmd)}")
@@ -156,7 +140,7 @@ def run_powermetrics(local_stop_signal, filename: str = None):
             partial_buffer = ''
             while not local_stop_signal.is_set():
                 # Make sure that the timeout is greater than the output is coming in
-                rlist, _, _ = select.select([process.stdout], [], [], int(SETTINGS['powermetrics'] / 1_000 * 2 ))
+                rlist, _, _ = select.select([process.stdout], [], [], int(global_settings['powermetrics'] / 1_000 * 2 ))
                 if rlist:
                     # This is a little hacky. The problem is that select just reads data and doesn't respect the lines
                     # so it happens that we read in the middle of a line.
@@ -190,14 +174,14 @@ def upload_data_to_endpoint(local_stop_signal):
 
         # When everything is uploaded we sleep
         if not rows:
-            sleeper(local_stop_signal, SETTINGS['upload_delta'])
+            sleeper(local_stop_signal, global_settings['upload_delta'])
             continue
 
         payload = []
         for row in rows:
             row_id, time_val, data_val = row
 
-            settings_upload = SETTINGS.copy()
+            settings_upload = global_settings.copy()
             # We don't need this in the DB on the server
             del settings_upload['api_url']
             del settings_upload['web_url']
@@ -212,12 +196,12 @@ def upload_data_to_endpoint(local_stop_signal):
             })
 
         request_data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(url=SETTINGS['api_url'],
+        req = urllib.request.Request(url=global_settings['api_url'],
                                         data=request_data,
                                         headers={'content-type': 'application/json'},
                                         method='POST')
 
-        logging.info(f"Uploading {len(payload)} rows to: {SETTINGS['api_url']}")
+        logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
 
         try:
             with urllib.request.urlopen(req) as response:
@@ -228,7 +212,7 @@ def upload_data_to_endpoint(local_stop_signal):
                     logging.debug('Uploaded.')
                 else:
                     logging.info(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
-                    sleeper(local_stop_signal, SETTINGS['upload_delta']) # Sleep if there is an error
+                    sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
 
         except (urllib.error.HTTPError,
                 ConnectionRefusedError,
@@ -236,7 +220,7 @@ def upload_data_to_endpoint(local_stop_signal):
                 http.client.RemoteDisconnected,
                 ConnectionResetError) as exc:
             logging.debug(f"Upload exception: {exc}")
-            sleeper(local_stop_signal, SETTINGS['upload_delta']) # Sleep if there is an error
+            sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
 
     thread_conn.close()
 
@@ -247,7 +231,7 @@ def find_top_processes(data: list, elapsed_ns:int):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
     new_data = []
     for coalition in data:
-        if coalition['name'].lower() in SETTINGS['resolve_coalitions'] or coalition['name'].strip() == '':
+        if coalition['name'].lower() in global_settings['resolve_coalitions'] or coalition['name'].strip() == '':
             new_data.extend(coalition['tasks'])
         else:
             new_data.append(coalition)
@@ -336,11 +320,11 @@ def save_settings():
     if result:
         machine_uuid, last_powermetrics, last_api_url, last_web_url, last_upload_delta, last_upload_data = result
 
-        if (last_powermetrics == SETTINGS['powermetrics'] and
-            last_api_url.strip() == SETTINGS['api_url'].strip() and
-            last_web_url.strip() == SETTINGS['web_url'].strip() and
-            last_upload_delta == SETTINGS['upload_delta'] and
-            last_upload_data == SETTINGS['upload_data']):
+        if (last_powermetrics == global_settings['powermetrics'] and
+            last_api_url.strip() == global_settings['api_url'].strip() and
+            last_web_url.strip() == global_settings['web_url'].strip() and
+            last_upload_delta == global_settings['upload_delta'] and
+            last_upload_data == global_settings['upload_data']):
             return False
     else:
         machine_uuid = str(uuid.uuid1())
@@ -350,25 +334,31 @@ def save_settings():
             (?, ?, ?, ?, ?, ?, ?)''', (
                 int(time.time()),
                 machine_uuid,
-                SETTINGS['powermetrics'],
-                SETTINGS['api_url'].strip(),
-                SETTINGS['web_url'].strip(),
-                SETTINGS['upload_delta'],
-                SETTINGS['upload_data'],
+                global_settings['powermetrics'],
+                global_settings['api_url'].strip(),
+                global_settings['web_url'].strip(),
+                global_settings['upload_delta'],
+                global_settings['upload_data'],
             ))
 
     conn.commit()
-    logging.debug(f"Saved Settings:\n{SETTINGS}")
+    logging.debug(f"Saved Settings:\n{global_settings}")
 
     return True
 
+def is_powermetrics_running():
+    try:
+        output = subprocess.check_output('pgrep powermetrics', shell=True).decode()
+        return bool(output.strip())
+    except:
+        return False
 
-def check_DB(local_stop_signal):
-    # The powermetrics script should return ever SETTINGS['powermetrics'] ms but because of the way we batch things
+def check_DB(local_stop_signal, stime: SharedTime):
+    # The powermetrics script should return ever global_settings['powermetrics'] ms but because of the way we batch things
     # we will not get values every n ms so we have quite a big value here.
     # powermetrics = 5000 ms in production and 1000 in dev mode
 
-    interval_sec = SETTINGS['powermetrics'] * 20  / 1_000
+    interval_sec = global_settings['powermetrics'] * 20  / 1_000
 
     # We first sleep for quite some time to give the program some time to add data to the DB
     sleeper(local_stop_signal, interval_sec)
@@ -377,7 +367,9 @@ def check_DB(local_stop_signal):
     tc = thread_conn.cursor()
 
     while not local_stop_signal.is_set():
-        n_ago = int((time.time() - interval_sec) * 1_000)
+        logging.debug('DB Check')
+
+        n_ago = int((stime.get_tick() - interval_sec) * 1_000)
 
         tc.execute('SELECT MAX(time) FROM measurements')
         result = tc.fetchone()
@@ -389,8 +381,13 @@ def check_DB(local_stop_signal):
         else:
             logging.error('We are not getting values from the DB for checker thread.')
 
-        logging.debug('DB Check')
+        logging.debug('Power metrics running check')
+        if not is_powermetrics_running():
+            logging.error('Powermetrics is not running. Stopping!')
+            local_stop_signal.set()
+
         sleeper(local_stop_signal, interval_sec)
+
 
     thread_conn.close()
 
@@ -402,6 +399,65 @@ def is_power_logger_running():
         sys.exit(4)
     except subprocess.CalledProcessError:
         return False
+
+def set_tick(local_stop_signal, stime):
+    while not local_stop_signal.is_set():
+        stime.set_tick()
+        sleeper(local_stop_signal, 1)
+
+
+def get_settings(debug = False):
+    if debug:
+        return {
+            'powermetrics' : 1000,
+            'upload_delta': 5,
+            'api_url': 'http://api.green-coding.internal:9142/v1/hog/add',
+            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_uuid=',
+            'upload_data': True,
+            'resolve_coalitions': ['com.googlecode.iterm2', 'com.apple.terminal', 'com.vix.cron', 'org.alacritty'],
+        }
+
+
+    default_settings = {
+        'powermetrics': 5000,
+        'upload_delta': 300,
+        'api_url': 'https://api.green-coding.berlin/v1/hog/add',
+        'web_url': 'https://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
+        'upload_data': True,
+        'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty'
+    }
+
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    if os.path.exists('/etc/hog_settings.ini'):
+        config_path = '/etc/hog_settings.ini'
+    elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
+        config_path = os.path.join(script_dir, 'settings.ini')
+    else:
+        config_path = None
+
+    config = configparser.ConfigParser()
+
+    ret_settings = {}
+
+    if config_path:
+        config.read(config_path)
+        logging.debug(f"Using {config_path} as settings file.")
+        ret_settings = {
+            'powermetrics': int(config['DEFAULT'].get('powermetrics', default_settings['powermetrics'])),
+            'upload_delta': int(config['DEFAULT'].get('upload_delta', default_settings['upload_delta'])),
+            'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
+            'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
+            'upload_data': bool(config['DEFAULT'].getboolean('upload_data', default_settings['upload_data'])),
+            'resolve_coalitions': config['DEFAULT'].get('resolve_coalitions', default_settings['resolve_coalitions']),
+        }
+    else:
+        ret_settings = default_settings
+
+    if not isinstance(ret_settings['resolve_coalitions'], list):
+        ret_settings['resolve_coalitions'] = [x.strip().lower() for x in ret_settings['resolve_coalitions'].split(',')]
+
+    return ret_settings
 
 
 if __name__ == '__main__':
@@ -424,13 +480,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.dev:
-        SETTINGS = {
-            'powermetrics' : 1000,
-            'upload_delta': 5,
-            'api_url': 'http://api.green-coding.internal:9142/v1/hog/add',
-            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_uuid=',
-            'upload_data': True,
-        }
         args.log_level = 'debug'
 
     log_level = getattr(logging, args.log_level.upper())
@@ -443,6 +492,7 @@ if __name__ == '__main__':
     logging.debug('Program started.')
     logging.debug(f"Using db: {DATABASE_FILE}")
 
+    global_settings = get_settings(args.dev)
 
     if os.geteuid() != 0:
         logging.error('The script needs to be run as root!')
@@ -460,22 +510,29 @@ if __name__ == '__main__':
     caribou.upgrade(DATABASE_FILE, MIGRATIONS_PATH)
 
     if not save_settings():
-        logging.debug(f"Setting: {SETTINGS}")
+        logging.debug(f"Setting: {global_settings}")
 
 
     if args.website:
         print('Please visit this url for detailed analytics:')
-        print(f"{SETTINGS['web_url']}{machine_uuid}")
+        print(f"{global_settings['web_url']}{machine_uuid}")
         sys.exit(0)
 
-    if SETTINGS['upload_data']:
+    # We need to introduce a a time holding obj as otherwise the times don't sync when the computer sleeps.
+    shared_time = SharedTime()
+
+    if global_settings['upload_data']:
         upload_thread = threading.Thread(target=upload_data_to_endpoint, args=(stop_signal,))
         upload_thread.start()
         logging.debug('Upload thread started')
 
-    db_checker_thread = threading.Thread(target=check_DB, args=(stop_signal,), daemon=True)
+    db_checker_thread = threading.Thread(target=check_DB, args=(stop_signal, shared_time), daemon=True)
     db_checker_thread.start()
     logging.debug('DB checker thread started')
+
+    ticker_thread = threading.Thread(target=set_tick, args=(stop_signal, shared_time), daemon=True)
+    ticker_thread.start()
+    logging.debug('Ticker thread started')
 
     run_powermetrics(stop_signal, args.file)
 

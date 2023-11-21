@@ -28,7 +28,7 @@ from pathlib import Path
 
 from libs import caribou
 
-VERSION = '0.3'
+VERSION = '0.4'
 
 LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 
@@ -204,7 +204,7 @@ def upload_data_to_endpoint(local_stop_signal):
         logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
 
         try:
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=10) as response:
                 if response.status == 204:
                     for p in payload:
                         tc.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))

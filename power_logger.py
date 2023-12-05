@@ -213,16 +213,18 @@ def upload_data_to_endpoint(local_stop_signal):
 
         # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 30 seconds and if it hasn't
         # been canceled we kill everything
-        kill_timer = threading.Timer(30.0, kill_program)
+        kill_timer = threading.Timer(60.0, kill_program)
         kill_timer.start()
 
         try:
-            with urllib.request.urlopen(req, timeout=10) as response:
+            start_time = time.time()
+            with urllib.request.urlopen(req, timeout=30) as response:
                 if response.status == 204:
                     for p in payload:
                         tc.execute('UPDATE measurements SET uploaded = ?, data = NULL WHERE id = ?;', (int(time.time()), p['row_id']))
                     thread_conn.commit()
-                    logging.debug('Uploaded.')
+                    upload_delta = time.time() - start_time
+                    logging.debug(f"Uploaded. Took {upload_delta:.2f} seconds")
                 else:
                     logging.info(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
                     sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
@@ -488,7 +490,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dev', action='store_true', help='Enable development mode api endpoints and log level.')
     parser.add_argument('-w', '--website', action='store_true', help='Shows the website URL')
     parser.add_argument('-f', '--file', type=str, help='Path to the input file')
-    parser.add_argument('-v', '--log-level', choices=LOG_LEVELS, default='info', help='Logging level (debug, info, warning, error, critical)')
+    parser.add_argument('-v', '--log-level', choices=LOG_LEVELS, default='info', help='Logging level')
     parser.add_argument('-o', '--output-file', type=str, help='Path to the output log file.')
 
     args = parser.parse_args()

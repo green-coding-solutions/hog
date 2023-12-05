@@ -73,6 +73,14 @@ machine_uuid = None
 conn = sqlite3.connect(DATABASE_FILE)
 c = conn.cursor()
 
+def kill_program():
+    # We set the stop_signal for everything to shut down in an orderly fashion
+    global stop_signal
+    stop_signal.set()
+    logging.info('Stopping program due to an inconsistent state of the program. Probably the upload blocking')
+    time.sleep(5) # Give everything some time to shutdown
+    # Now we need to exit the program as the upload thread is not responding and needs to be killed
+    os._exit(5)
 
 def sigint_handler(_, __):
     global stop_signal
@@ -203,6 +211,11 @@ def upload_data_to_endpoint(local_stop_signal):
 
         logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
 
+        # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 30 seconds and if it hasn't
+        # been canceled we kill everything
+        kill_timer = threading.Timer(30.0, kill_program)
+        kill_timer.start()
+
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
                 if response.status == 204:
@@ -213,15 +226,15 @@ def upload_data_to_endpoint(local_stop_signal):
                 else:
                     logging.info(f"Failed to upload data: {payload}\n HTTP status: {response.status}")
                     sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
-
+                kill_timer.cancel()
         except (urllib.error.HTTPError,
                 ConnectionRefusedError,
                 urllib.error.URLError,
                 http.client.RemoteDisconnected,
                 ConnectionResetError) as exc:
             logging.debug(f"Upload exception: {exc}")
+            kill_timer.cancel()
             sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
-
     thread_conn.close()
 
 
@@ -470,6 +483,7 @@ if __name__ == '__main__':
                                         2 - force quit
                                         3 - db not updated
                                         4 - already a power_logger process is running
+                                        5 - program was forced killed because of network deadlock
                                      ''')
     parser.add_argument('-d', '--dev', action='store_true', help='Enable development mode api endpoints and log level.')
     parser.add_argument('-w', '--website', action='store_true', help='Shows the website URL')

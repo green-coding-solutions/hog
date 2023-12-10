@@ -507,19 +507,23 @@ struct TopProcessTable: View {
                         }.width(20)
 
                         TableColumn("Name", value: \TopProcess.name)
+
                         TableColumn("Energy Impact", value: \TopProcess.energy_impact){ line in
                             Text(String(line.energy_impact))
+                            .font(.system(.body, design: .monospaced))
+
                         }
                         TableColumn("AVG CPU time %", value: \TopProcess.cputime_per){ line in
                             Text(String(line.cputime_per))
+                            .font(.system(.body, design: .monospaced))
+
                         }
                     }
                     .onChange(of: sortOrder) { newOrder in
                         tpData.sort(using: newOrder)
                     }.foregroundColor(tableColour)
-
-
                     .tableStyle(.bordered(alternatesRowBackgrounds: true))
+                    
                     HStack {
                         Spacer()  // Pushes the Link to the right side.
                         Link("Description", destination: URL(string: "https://github.com/green-coding-berlin/hog#the-desktop-app")!)

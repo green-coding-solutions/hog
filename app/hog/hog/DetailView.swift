@@ -331,12 +331,17 @@ class TopProcessData: LoadingClass, Identifiable, ObservableObject, RandomAccess
         let queryString: String
         if self.lookBackTime == 0 {
             queryString = """
-                SELECT name, SUM(energy_impact), AVG(cputime_per)
-                FROM top_processes
-                GROUP BY name
-                ORDER BY SUM(energy_impact) DESC
+                SELECT
+                    name,
+                    SUM(energy_impact) AS total_energy_impact,
+                    AVG(cputime_per) AS average_cputime_per
+                FROM
+                    top_processes
+                GROUP BY
+                    name
+                ORDER BY
+                    total_energy_impact DESC
                 LIMIT 50;
-
                 """
         } else {
             queryString = """
@@ -413,7 +418,19 @@ class ChartData: LoadingClass, ObservableObject, RandomAccessCollection {
 
         let queryString: String
         if self.lookBackTime == 0 {
-            queryString = "SELECT * FROM power_measurements;"
+            queryString = """
+                SELECT
+                    strftime('%s', date(time / 1000, 'unixepoch')) * 1000 AS day_epoch,
+                    SUM(combined_energy),
+                    SUM(cpu_energy),
+                    SUM(gpu_energy),
+                    SUM(ane_energy),
+                    SUM(energy_impact)
+                FROM
+                    power_measurements
+                GROUP BY
+                    day_epoch;
+            """
         } else {
             queryString = "SELECT * FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
         }

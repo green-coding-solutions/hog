@@ -28,7 +28,7 @@ from pathlib import Path
 
 from libs import caribou
 
-VERSION = '0.4'
+VERSION = '0.5'
 
 LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 

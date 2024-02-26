@@ -34,10 +34,10 @@ install_xcode_clt() {
 install_xcode_clt
 
 # Checks if the hog is already running
-hog_running_output=$(launchctl list | grep berlin.green-coding.hog || echo "")
+hog_running_output=$(launchctl list | grep io.green-coding.hog || echo "")
 
 if [[ ! -z "$hog_running_output" ]]; then
-    launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
+    launchctl unload /Library/LaunchDaemons/io.green-coding.hog.plist
     rm -f /tmp/latest_release.zip
 fi
 
@@ -45,7 +45,7 @@ fi
 # Downloads and moves the code
 ###
 
-ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-berlin/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
+ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-solutions/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
 curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
 mkdir -p /usr/local/bin/hog
@@ -77,8 +77,8 @@ fi
 
 cat > /etc/hog_settings.ini << EOF
 [DEFAULT]
-api_url = https://api.green-coding.berlin/v1/hog/add
-web_url = https://metrics.green-coding.berlin/hog-details.html?machine_uuid=
+api_url = https://api.green-coding.io/v1/hog/add
+web_url = https://metrics.green-coding.io/hog-details.html?machine_uuid=
 upload_delta = 300
 powermetrics = 5000
 upload_data = $upload_flag
@@ -91,13 +91,13 @@ echo "Configuration written to /etc/hog_settings.ini"
 # Setting up the background demon
 ###
 
-mv -f /usr/local/bin/hog/berlin.green-coding.hog.plist /Library/LaunchDaemons/berlin.green-coding.hog.plist
+mv -f /usr/local/bin/hog/io.green-coding.hog.plist /Library/LaunchDaemons/io.green-coding.hog.plist
 
-sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/io.green-coding.hog.plist
 
-chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
-chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist
+chown root:wheel /Library/LaunchDaemons/io.green-coding.hog.plist
+chmod 644 /Library/LaunchDaemons/io.green-coding.hog.plist
 
-launchctl load /Library/LaunchDaemons/berlin.green-coding.hog.plist
+launchctl load /Library/LaunchDaemons/io.green-coding.hog.plist
 
 echo -e "${GREEN}Successfully installed the Power Hog Demon!${NC}"

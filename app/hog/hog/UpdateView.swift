@@ -18,7 +18,7 @@ struct ReleaseCheckerView: View {
         VStack {
             if hasNewRelease {
                 Text("A new Hog version is available. Please update!")
-                Text("See https://github.com/green-coding-berlin/hog/blob/main/README.md#updating")
+                Text("See https://github.com/green-coding-solutions/hog/blob/main/README.md#updating")
             }
         }
         .task {
@@ -27,7 +27,7 @@ struct ReleaseCheckerView: View {
     }
 
     func fetchLatestRelease() async throws -> GitHubRelease? {
-        let url = URL(string: "https://api.github.com/repos/green-coding-berlin/hog/releases/latest")!
+        let url = URL(string: "https://api.github.com/repos/green-coding-solutions/hog/releases/latest")!
         
         let (data, response) = try await URLSession.shared.data(from: url)
         

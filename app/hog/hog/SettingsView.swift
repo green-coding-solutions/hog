@@ -143,7 +143,7 @@ struct SettingsView: View {
             if settingsManager.isLoading {
                 Text("Loading")
             } else {
-                Text("These are the settings that are set by the power logger.\nPlease refer to https://github.com/green-coding-berlin/hog#settings")
+                Text("These are the settings that are set by the power logger.\nPlease refer to https://github.com/green-coding-solutions/hog#settings")
                 Divider().padding()
                 SettingDetailView(title: "Machine ID:", value: settingsManager.machine_uuid)
                 SettingDetailView(title: "Powermetrics Intervall:", value: "\(settingsManager.powermetrics)")

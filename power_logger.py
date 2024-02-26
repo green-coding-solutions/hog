@@ -50,7 +50,7 @@ class SharedTime:
 
 
 
-APP_NAME = 'berlin.green-coding.hog'
+APP_NAME = 'io.green-coding.hog'
 APP_SUPPORT_PATH = Path(f"/Library/Application Support/{APP_NAME}")
 APP_SUPPORT_PATH.mkdir(parents=True, exist_ok=True)
 
@@ -255,7 +255,7 @@ def find_top_processes(data: list, elapsed_ns:int):
         yield{
             'name': p['name'],
             # Energy_impact and cputime are broken so we need to use the per_s and convert them
-            # Check the https://www.green-coding.berlin/blog/ for details
+            # Check the https://www.green-coding.io/blog/ for details
             'energy_impact': round((p['energy_impact_per_s'] / 1_000_000_000) * elapsed_ns),
             'cputime_ns': ((p['cputime_ms_per_s'] * 1_000_000)  / 1_000_000_000) * elapsed_ns,
         }
@@ -553,8 +553,8 @@ def get_settings(debug = False):
     default_settings = {
         'powermetrics': 5000,
         'upload_delta': 300,
-        'api_url': 'https://api.green-coding.berlin/v1/hog/add',
-        'web_url': 'https://metrics.green-coding.berlin/hog-details.html?machine_uuid=',
+        'api_url': 'https://api.green-coding.io/v1/hog/add',
+        'web_url': 'https://metrics.green-coding.io/hog-details.html?machine_uuid=',
         'upload_data': True,
         'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty'
     }

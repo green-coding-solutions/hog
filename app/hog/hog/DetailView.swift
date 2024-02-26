@@ -2,7 +2,7 @@
 //  DetailView.swift
 //  hog
 //
-//  Created by Didi Hoffmann <didi@green-coding.berlin>
+//  Created by Didi Hoffmann <didi@green-coding.io>
 //
 // A few things to note:
 // - We can not share the db pointer for the whole app as sqlite does not allow multiple threads to share one connection
@@ -15,7 +15,7 @@ import Charts
 import AppKit
 import Combine
 
-var db_path = "/Library/Application Support/berlin.green-coding.hog/db.db"
+var db_path = "/Library/Application Support/io.green-coding.hog/db.db"
 
 
 public func isScriptRunning(scriptName: String) -> Bool {
@@ -543,7 +543,7 @@ struct TopProcessTable: View {
                     
                     HStack {
                         Spacer()  // Pushes the Link to the right side.
-                        Link("Description", destination: URL(string: "https://github.com/green-coding-berlin/hog#the-desktop-app")!)
+                        Link("Description", destination: URL(string: "https://github.com/green-coding-solutions/hog#the-desktop-app")!)
                             .font(.footnote)  // This makes the font size smaller.
                     }
                 }.padding()
@@ -603,8 +603,8 @@ struct DataView: View {
             if chartData.isLoading == false && chartData.isEmpty {
                 Text("No Data for this timeframe!").font(.largeTitle)
                 Text("Please make sure the data collection app is running! For more details please check out the documentation under:")
-                Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
-                    Text("https://github.com/green-coding-berlin/hog#power-logger")
+                Link(destination: URL(string: "https://github.com/green-coding-solution/hog#power-logger")!) {
+                    Text("https://github.com/green-coding-solution/hog#power-logger")
                 }
             }else{
                 HStack {
@@ -639,7 +639,7 @@ struct DataView: View {
                             } else {
                                 HStack{
                                     TextBadge(title: "", color: Color("redish"), image: "exclamationmark.octagon", value: "Measurement systems not running!")
-                                    Link(destination: URL(string: "https://github.com/green-coding-berlin/hog#power-logger")!) {
+                                    Link(destination: URL(string: "https://github.com/green-coding-solutions/hog#power-logger")!) {
                                         Image(systemName: "questionmark.circle.fill")
                                             .font(.system(size: 24))
                                     }

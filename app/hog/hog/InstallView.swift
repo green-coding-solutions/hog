@@ -47,7 +47,7 @@ struct CopyPasteTextField: NSViewRepresentable {
 
 
 struct TwoView: View {
-    @State private var text = "sudo bash -c \"$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)\""
+    @State private var text = "sudo bash -c \"$(curl -fsSL https://raw.githubusercontent.com/green-coding-solutions/hog/main/install.sh)\""
 
     var body: some View {
         Text("2) Run this command").font(.headline)
@@ -137,11 +137,11 @@ struct InstallView: View {
             }
             .alert(isPresented: $showingAlert) {
                 Alert(title: Text("There was an error copying demo data."),
-                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-berlin/hog/issues/new"),
+                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-soltions/hog/issues/new"),
                       dismissButton: .default(Text("Got it!")))
             }
             Divider()
-            Text("You can also read our documentation for all the details under: https://github.com/green-coding-berlin/hog")
+            Text("You can also read our documentation for all the details under: https://github.com/green-coding-solutions/hog")
 
         }.padding()
 

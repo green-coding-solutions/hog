@@ -10,9 +10,9 @@ There are two main aims:
 2) Collecting the data from as many machines as possible to identify wasteful apps globally.
 
 We provide a website for detailed analytics of your data. The hog by default uploads your measurement data to our
-[Green Metrics Tool](https://github.com/green-coding-berlin/green-metrics-tool) backend. We put in a lot of effort
+[Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) backend. We put in a lot of effort
 to make sure that no confidential information is exposed but please refer to the [settings](#settings) section if you
-want to disable the upload or submit the data to your own [backend](https://docs.green-coding.berlin/docs/installation/installation-linux/).
+want to disable the upload or submit the data to your own [backend](https://docs.green-coding.io/docs/installation/installation-linux/).
 
 The hog consists of 2 apps that run on your local system. You need to power logger but not the app!
 
@@ -43,7 +43,7 @@ You can use the `-f` parameter with a filename. Please submit the data in the pl
 This is a description on how to set everything up if you did a git clone. You can also just do
 
 ```
-sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)"
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-solutions/hog/main/install.sh)"
 ```
 which will do the whole install for you.
 
@@ -51,7 +51,7 @@ which will do the whole install for you.
 
 Make the `power_logger.py` script executable with `chmod a+x power_logger.py`
 
-Please modify the `berlin.green-coding.hog.plist` file to reference the right path. There is a script below that does
+Please modify the `io.green-coding.hog.plist` file to reference the right path. There is a script below that does
 everything for you.
 
 Place the .plist file in the `/Library/LaunchDaemons` directory.
@@ -59,31 +59,31 @@ For security reasons, files in /Library/LaunchDaemons/ should have their permiss
 and should not be writable by others.
 
 ```bash
-sed -i.bak "s|PATH_PLEASE_CHANGE|$(pwd)|g" berlin.green-coding.hog.plist
-sudo cp berlin.green-coding.hog.plist /Library/LaunchDaemons/
+sed -i.bak "s|PATH_PLEASE_CHANGE|$(pwd)|g" io.green-coding.hog.plist
+sudo cp io.green-coding.hog.plist /Library/LaunchDaemons/
 
-sudo chown root:wheel /Library/LaunchDaemons/berlin.green-coding.hog.plist
-sudo chmod 644 /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sudo chown root:wheel /Library/LaunchDaemons/io.green-coding.hog.plist
+sudo chmod 644 /Library/LaunchDaemons/io.green-coding.hog.plist
 
 ```
 
 After placing the .plist file in the right directory, you need to tell launchd to load the new configuration:
 
 ```bash
-sudo launchctl load /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sudo launchctl load /Library/LaunchDaemons/io.green-coding.hog.plist
 ```
 
 You can check if your service is loaded with:
 
 ```bash
-sudo launchctl list | grep berlin.green-coding.hog
+sudo launchctl list | grep io.green-coding.hog
 ```
 
 If you want to unload or stop the service:
 
 ```bash
 
-sudo launchctl unload /Library/LaunchDaemons/berlin.green-coding.hog.plist
+sudo launchctl unload /Library/LaunchDaemons/io.green-coding.hog.plist
 ```
 
 ### Settings
@@ -95,7 +95,7 @@ Following keys are currently used:
 
 - `powermetrics`: This is the delta in ms that power metrics should take samples. So if you set this to 5000 powermetrics will return the aggregated values every 5 seconds
 - `upload_delta`: This is the time delta data should be uploaded in seconds.
-- `api_url`: The url endpoint the data should be uploaded to. You can use the https://github.com/green-coding-berlin/green-metrics-tool if you want but also write/ use your own backend.
+- `api_url`: The url endpoint the data should be uploaded to. You can use the https://github.com/green-coding-solutions/green-metrics-tool if you want but also write/ use your own backend.
 - `web_url`: The url where the analytics can be found. We will append the machine ID to this so make sure the end of the string is a `=`
 - `resolve_coalitions`: The way macOS works is that it looks as apps and not processes. So it can happen that when you look at your power data you see your shell as the main power hog.
         This is because your shell has probably spawn the process that is using a lot of resources. Please add the name of the coalition to this list to resolve this error.
@@ -121,18 +121,18 @@ The hog desktop app gives you analytics of the data that was recorded. Please mo
 All data is saved in an sqlite database that is located under:
 
 ```bash
-/Library/Application Support/berlin.green-coding.hog/db.db
+/Library/Application Support/io.green-coding.hog/db.db
 ```
 
 ## Updating
 
 We currently don't support an automatic update. You will have to:
 
-- Download the current app and move it into your Applications folder from https://github.com/green-coding-berlin/hog/releases . The file will be called `hog.app.zip`
+- Download the current app and move it into your Applications folder from https://github.com/green-coding-solutions/hog/releases . The file will be called `hog.app.zip`
 - Rerun in the install script which will overwrite any custom changes you have made!
 ```
 sudo mv /etc/hog_settings.ini /etc/hog_settings.ini.back
-sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-berlin/hog/main/install.sh)"
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-solutions/hog/main/install.sh)"
 ```
 
 ## Contributing
@@ -143,14 +143,14 @@ The hog is developed to not need any dependencies.
 
 ## Debugging
 
-It sometimes help to enable debugging for the logger process you can do this by editing the `/Library/LaunchDaemons/berlin.green-coding.hog.plist` file:
+It sometimes help to enable debugging for the logger process you can do this by editing the `/Library/LaunchDaemons/io.green-coding.hog.plist` file:
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>berlin.green-coding.hog</string>
+    <string>io.green-coding.hog</string>
 
     <key>ProgramArguments</key>
     <array>

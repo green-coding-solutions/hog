@@ -3,11 +3,15 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>hog.green-coding.berlin</string>
+    <string>io.green-coding.hog</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>python3 /Users/didi/code/hog/power_logger.py</string>
+        <string>PATH_PLEASE_CHANGE/power_logger.py</string>
+        <string>-v</string>
+        <string>debug</string>
+        <string>-o</string>
+        <string>/tmp/hog.log</string>
     </array>
 
     <key>RunAtLoad</key>

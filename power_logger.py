@@ -265,8 +265,9 @@ class RemoveNaNEncoder(json.JSONEncoder):
     def encode(self, obj):
         def remove_nan(o):
             if isinstance(o, dict):
-                return {k: remove_nan(v) for k, v in o.items()
-                        if not (isinstance(v, float) and math.isnan(v))}
+                return {remove_nan(k): remove_nan(v) for k, v in o.items()
+                        if not ((isinstance(k, float) and math.isnan(k)) or
+                                (isinstance(v, float) and math.isnan(v)))}
             elif isinstance(o, list):
                 return [remove_nan(v) for v in o
                         if not (isinstance(v, float) and math.isnan(v))]
@@ -274,6 +275,8 @@ class RemoveNaNEncoder(json.JSONEncoder):
                 return o
         cleaned_obj = remove_nan(obj)
         return super(RemoveNaNEncoder, self).encode(cleaned_obj)
+
+
 
 def parse_powermetrics_output(output: str):
     global stats

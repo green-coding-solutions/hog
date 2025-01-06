@@ -3,6 +3,7 @@ set -euo pipefail
 
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
+CONFIG_FILE="/etc/hog_settings.ini"
 
 # Function to check and install Xcode Command Line Tools
 install_xcode_clt() {
@@ -34,10 +35,10 @@ install_xcode_clt() {
 install_xcode_clt
 
 # Checks if the hog is already running
-hog_running_output=$(launchctl list | grep io.green-coding.hog || echo "")
+hog_running_output=$(launchctl list | grep io.green-coding.hogger || echo "")
 
 if [[ ! -z "$hog_running_output" ]]; then
-    launchctl unload /Library/LaunchDaemons/io.green-coding.hog.plist
+    launchctl bootout system /Library/LaunchDaemons/io.green-coding.hogger.plist
     rm -f /tmp/latest_release.zip
 fi
 
@@ -61,43 +62,45 @@ chmod +x /usr/local/bin/hog/power_logger.py
 # Writing the config file
 ###
 
-if [[ -t 0 ]]; then  # Check if input is from a terminal
-    read -p "In order for the app to work with all features please allow us to upload some data. [Y/n]: " upload_data
+update_config() {
+    local key="$1"
+    local value="$2"
+    local file="$3"
+    if grep -q "^${key} =" "$file"; then
+        sed -i "s|^${key} =.*|${key} = ${value}|" "$file"
+    else
+        echo "${key} = ${value}" >> "$file"
+    fi
+}
+
+cat settings.ini > "$CONFIG_FILE"
+
+if [[ -t 0 ]]; then
+    read -p "In order for the app to work with all features, please allow us to upload some data. [Y/n]: " upload_data
     upload_data=${upload_data:-Y}
     upload_data=$(echo "$upload_data" | tr '[:upper:]' '[:lower:]')
 
     if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
-        upload_flag="true"
+        sed -i "s|^upload_data =.*|upload_data = true|" "$CONFIG_FILE"
     else
-        upload_flag="false"
+        sed -i "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
     fi
-else
-    upload_flag="true"
 fi
 
-cat > /etc/hog_settings.ini << EOF
-[DEFAULT]
-api_url = https://api.green-coding.io/v1/hog/add
-web_url = https://metrics.green-coding.io/hog-details.html?machine_uuid=
-upload_delta = 300
-powermetrics = 5000
-upload_data = $upload_flag
-resolve_coalitions=com.googlecode.iterm2,com.apple.Terminal,com.vix.cron
-EOF
+echo "Installation complete. Configuration updated at $CONFIG_FILE."
 
-echo "Configuration written to /etc/hog_settings.ini"
 
 ###
 # Setting up the background demon
 ###
 
-mv -f /usr/local/bin/hog/io.green-coding.hog.plist /Library/LaunchDaemons/io.green-coding.hog.plist
+mv -f /usr/local/bin/hog/io.green-coding.hogger.plist /Library/LaunchDaemons/io.green-coding.hogger.plist
 
-sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/io.green-coding.hog.plist
+sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/io.green-coding.hogger.plist
 
-chown root:wheel /Library/LaunchDaemons/io.green-coding.hog.plist
-chmod 644 /Library/LaunchDaemons/io.green-coding.hog.plist
+chown root:wheel /Library/LaunchDaemons/io.green-coding.hogger.plist
+chmod 644 /Library/LaunchDaemons/io.green-coding.hogger.plist
 
-launchctl load /Library/LaunchDaemons/io.green-coding.hog.plist
+launchctl bootstrap system /Library/LaunchDaemons/io.green-coding.hogger.plist
 
 echo -e "${GREEN}Successfully installed the Power Hog Demon!${NC}"

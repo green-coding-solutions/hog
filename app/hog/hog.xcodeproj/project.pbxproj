@@ -12,6 +12,8 @@
 		0A16366E2AE097CC001C38B4 /* UpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A16366D2AE097CC001C38B4 /* UpdateView.swift */; };
 		0A69EDE42AA0820E00F4A364 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A69EDE32AA0820E00F4A364 /* DetailView.swift */; };
 		0A6C64572AAF5F9A00664D98 /* demo_db.db in Resources */ = {isa = PBXBuildFile; fileRef = 0A6C64562AAF5F9A00664D98 /* demo_db.db */; };
+		0AD451A92D09F3990020BFCA /* EmbodiedCarbonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD451A82D09F3960020BFCA /* EmbodiedCarbonView.swift */; };
+		0ADC5C2B2D0C4D2E0056326A /* mac_embodied_carbon.json in Resources */ = {isa = PBXBuildFile; fileRef = 0AD451A62D09F3710020BFCA /* mac_embodied_carbon.json */; };
 		0AEC07772A40D4C2003C82E7 /* hogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEC07762A40D4C2003C82E7 /* hogApp.swift */; };
 		0AEC077B2A40D4C3003C82E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AEC077A2A40D4C3003C82E7 /* Assets.xcassets */; };
 		0AEC077E2A40D4C3003C82E7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0AEC077D2A40D4C3003C82E7 /* Preview Assets.xcassets */; };
@@ -59,6 +61,8 @@
 		0A69EDE32AA0820E00F4A364 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		0A6C64552AACBA5A00664D98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0A6C64562AAF5F9A00664D98 /* demo_db.db */ = {isa = PBXFileReference; lastKnownFileType = text; path = demo_db.db; sourceTree = "<group>"; };
+		0AD451A62D09F3710020BFCA /* mac_embodied_carbon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mac_embodied_carbon.json; sourceTree = "<group>"; };
+		0AD451A82D09F3960020BFCA /* EmbodiedCarbonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbodiedCarbonView.swift; sourceTree = "<group>"; };
 		0AEC07732A40D4C2003C82E7 /* hog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0AEC07762A40D4C2003C82E7 /* hogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hogApp.swift; sourceTree = "<group>"; };
 		0AEC077A2A40D4C3003C82E7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -129,6 +133,8 @@
 		0AEC07752A40D4C2003C82E7 /* hog */ = {
 			isa = PBXGroup;
 			children = (
+				0AD451A82D09F3960020BFCA /* EmbodiedCarbonView.swift */,
+				0AD451A62D09F3710020BFCA /* mac_embodied_carbon.json */,
 				0A6C64552AACBA5A00664D98 /* Info.plist */,
 				0AEC07762A40D4C2003C82E7 /* hogApp.swift */,
 				0A69EDE32AA0820E00F4A364 /* DetailView.swift */,
@@ -236,7 +242,7 @@
 					New,
 				);
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					0AEC07722A40D4C2003C82E7 = {
 						CreatedOnToolsVersion = 14.3.1;
@@ -276,6 +282,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0ADC5C2B2D0C4D2E0056326A /* mac_embodied_carbon.json in Resources */,
 				0A6C64572AAF5F9A00664D98 /* demo_db.db in Resources */,
 				0AEC077E2A40D4C3003C82E7 /* Preview Assets.xcassets in Resources */,
 				0AEC077B2A40D4C3003C82E7 /* Assets.xcassets in Resources */,
@@ -308,6 +315,7 @@
 				0A16366E2AE097CC001C38B4 /* UpdateView.swift in Sources */,
 				0A1636652AE05E3E001C38B4 /* InstallView.swift in Sources */,
 				0AEC07772A40D4C2003C82E7 /* hogApp.swift in Sources */,
+				0AD451A92D09F3990020BFCA /* EmbodiedCarbonView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -468,7 +476,6 @@
 		0AEC07992A40D4C3003C82E7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -492,8 +499,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "io.green-coding.hog";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -504,7 +511,6 @@
 		0AEC079A2A40D4C3003C82E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -528,8 +534,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.5;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "io.green-coding.hog";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -540,7 +546,6 @@
 		0AEC079C2A40D4C3003C82E7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -560,7 +565,6 @@
 		0AEC079D2A40D4C3003C82E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -580,7 +584,6 @@
 		0AEC079F2A40D4C3003C82E7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -598,7 +601,6 @@
 		0AEC07A02A40D4C3003C82E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;

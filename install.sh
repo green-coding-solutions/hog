@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+HOG_PATH="/usr/local/bin/hogger"
+
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 CONFIG_FILE="/etc/hog_settings.ini"
@@ -49,14 +51,19 @@ fi
 ZIP_LOCATION=$(curl -s https://api.github.com/repos/green-coding-solutions/hog/releases/latest | grep -o 'https://[^"]*/hog_power_logger.zip')
 curl -fLo /tmp/latest_release.zip $ZIP_LOCATION
 
-mkdir -p /usr/local/bin/hog
+if [[ -z "/tmp/latest_release.zip" ]]; then
+    echo "Error: Could not fetch the ZIP URL from the GitHub API."
+    exit 1
+fi
 
-unzip -o -u /tmp/latest_release.zip -d /usr/local/bin/hog/
+mkdir -p "$HOG_PATH"
+
+unzip -o -u /tmp/latest_release.zip -d "$HOG_PATH"
 rm /tmp/latest_release.zip
 
-chmod 755 /usr/local/bin/hog
-chmod -R 755 /usr/local/bin/hog/
-chmod +x /usr/local/bin/hog/power_logger.py
+chmod 755 "$HOG_PATH"
+chmod -R 755 "$HOG_PATH"
+chmod +x "$HOG_PATH"/power_logger.py
 
 ###
 # Writing the config file
@@ -79,13 +86,16 @@ if [[ -t 0 ]]; then
     read -p "In order for the app to work with all features, please allow us to upload some data. [Y/n]: " upload_data
     upload_data=${upload_data:-Y}
     upload_data=$(echo "$upload_data" | tr '[:upper:]' '[:lower:]')
-
-    if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
-        sed -i "s|^upload_data =.*|upload_data = true|" "$CONFIG_FILE"
-    else
-        sed -i "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
-    fi
+else
+    upload_data="n"
 fi
+
+if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
+    sed -i "s|^upload_data =.*|upload_data = true|" "$CONFIG_FILE"
+else
+    sed -i "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
+fi
+
 
 echo "Installation complete. Configuration updated at $CONFIG_FILE."
 
@@ -94,9 +104,9 @@ echo "Installation complete. Configuration updated at $CONFIG_FILE."
 # Setting up the background demon
 ###
 
-mv -f /usr/local/bin/hog/io.green-coding.hogger.plist /Library/LaunchDaemons/io.green-coding.hogger.plist
+mv -f "$HOG_PATH/io.green-coding.hogger.plist /Library/LaunchDaemons/io.green-coding.hogger.plist"
 
-sed -i '' "s|PATH_PLEASE_CHANGE|/usr/local/bin/hog|g" /Library/LaunchDaemons/io.green-coding.hogger.plist
+sed -i '' "s|PATH_PLEASE_CHANGE|$HOG_PATH|g" /Library/LaunchDaemons/io.green-coding.hogger.plist
 
 chown root:wheel /Library/LaunchDaemons/io.green-coding.hogger.plist
 chmod 644 /Library/LaunchDaemons/io.green-coding.hogger.plist

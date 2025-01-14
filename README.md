@@ -89,7 +89,7 @@ sudo launchctl bootout system /Library/LaunchDaemons/io.green-coding.hogger.plis
 ### Settings
 
 It is possible to configure your own settings by using a `settings.ini` file in the same directory as the `power_logger.py`
-script. Or adding a `hog_settings.ini` file to `/etc/`. This will file will be prioritized.
+script. Or adding a `hog_settings.ini` file to `/etc/`. This file in `etc` will be prioritized.
 
 Following keys are currently used:
 

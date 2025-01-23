@@ -5,7 +5,7 @@ HOG_PATH="/usr/local/bin/hogger"
 
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
-CONFIG_FILE="/etc/hog_settings.ini"
+CONFIG_FILE="/etc/hogger_settings.ini"
 
 # Function to check and install Xcode Command Line Tools
 install_xcode_clt() {

@@ -682,8 +682,8 @@ def get_settings(debug = False):
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
-    if os.path.exists('/etc/hog_settings.ini'):
-        config_path = '/etc/hog_settings.ini'
+    if os.path.exists('/etc/hogger_settings.ini'):
+        config_path = '/etc/hogger_settings.ini'
     elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
         config_path = os.path.join(script_dir, 'settings.ini')
     else:

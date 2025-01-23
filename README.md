@@ -89,7 +89,7 @@ sudo launchctl bootout system /Library/LaunchDaemons/io.green-coding.hogger.plis
 ### Settings
 
 It is possible to configure your own settings by using a `settings.ini` file in the same directory as the `power_logger.py`
-script. Or adding a `hog_settings.ini` file to `/etc/`. This file in `etc` will be prioritized.
+script. Or adding a `hogger_settings.ini` file to `/etc/`. This file in `etc` will be prioritized.
 
 Following keys are currently used:
 
@@ -132,7 +132,7 @@ We currently don't support an automatic update. You will have to:
 - Download the current app and move it into your Applications folder from https://github.com/green-coding-solutions/hog/releases . The file will be called `hog.app.zip`
 - Rerun in the install script which will overwrite any custom changes you have made!
 ```
-sudo mv /etc/hog_settings.ini /etc/hog_settings.ini.back
+sudo mv /etc/hogger_settings.ini /etc/hogger_settings.ini.back
 sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/green-coding-solutions/hog/main/install.sh)"
 ```
 

@@ -100,6 +100,8 @@ Following keys are currently used:
         This is because your shell has probably spawn the process that is using a lot of resources. Please add the name of the coalition to this list to resolve this error.
 - `gmt_auth_token`: If you want to upload the data to the Green Metrics Tool and see you statistics you will need to supply an auth token https://metrics.green-coding.io/authentication.html
 - `electricitymaps_token`: If you add an electricity maps token we can take the grid intensity and calculate the amount to CO2eq you are producing. You can get this token under https://api-portal.electricitymaps.com/
+- `daily_computer_usage_hours`: How long the device is used in a day on average. We need this for the embodied carbon calculations.
+- `overall_usage_years`: How long in years the device will be used. We need this for the embodied carbon calculations.
 
 ## The desktop App
 

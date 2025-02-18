@@ -23,6 +23,7 @@ import threading
 import logging
 import select
 import math
+from functools import lru_cache
 
 from datetime import timezone
 from pathlib import Path
@@ -32,6 +33,9 @@ from libs import caribou
 VERSION = '0.6'
 
 LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 
 # Shared variable to signal the thread to stop
 stop_signal = threading.Event()
@@ -78,7 +82,7 @@ def kill_program():
     # We set the stop_signal for everything to shut down in an orderly fashion
     global stop_signal
     stop_signal.set()
-    logging.info('Stopping program due to an inconsistent state of the program. Probably the upload blocking')
+    logging.info('Stopping program due to an inconsistent state of the program.')
     time.sleep(5) # Give everything some time to shutdown
     # Now we need to exit the program as the upload thread is not responding and needs to be killed
     os._exit(5)
@@ -154,6 +158,12 @@ def run_powermetrics(local_stop_signal, filename: str = None):
                     # This is a little hacky. The problem is that select just reads data and doesn't respect the lines
                     # so it happens that we read in the middle of a line.
                     data = rlist[0].read()
+
+                    if data == '':
+                        logging.error('EOF reached: the subprocess has closed its stdout.')
+                        local_stop_signal.set()
+                        break
+
                     data = partial_buffer + data
                     lines = data.splitlines()
                     try:
@@ -173,10 +183,11 @@ def run_powermetrics(local_stop_signal, filename: str = None):
 
 
 def upload_data_to_endpoint(local_stop_signal):
-    thread_conn = sqlite3.connect(DATABASE_FILE)
-    tc = thread_conn.cursor()
 
     while not local_stop_signal.is_set():
+        thread_conn = sqlite3.connect(DATABASE_FILE)
+        tc = thread_conn.cursor()
+
         # We need to limit the amount of data here as otherwise the payload becomes to big
         tc.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
         rows = tc.fetchall()
@@ -218,7 +229,7 @@ def upload_data_to_endpoint(local_stop_signal):
 
         logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
 
-        # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 30 seconds and if it hasn't
+        # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 60 seconds and if it hasn't
         # been canceled we kill everything
         kill_timer = threading.Timer(60.0, kill_program)
         kill_timer.start()
@@ -244,10 +255,8 @@ def upload_data_to_endpoint(local_stop_signal):
             logging.debug(f"Upload exception: {exc}")
             kill_timer.cancel()
             sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
-    thread_conn.close()
 
-
-
+        thread_conn.close()
 
 def find_top_processes(data: list, elapsed_ns:int):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
@@ -349,6 +358,51 @@ def get_grid_intensity():
     finally:
         return get_grid_intensity_cache['value']  # Return last cached value on error
 
+def get_mac_model():
+    try:
+        result = subprocess.run(
+            ['system_profiler', 'SPHardwareDataType'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        for line in result.stdout.splitlines():
+            if 'Model Identifier' in line:
+                return line.split(":")[1].strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error occurred while fetching Mac model: {e}")
+        return None
+
+@lru_cache(maxsize=10) # This should normally only cache one value as we use seconds
+def embodied_co2eq_g(time_delta_seconds: int):
+    total_hours = global_settings['overall_usage_years'] * 365 * global_settings['daily_computer_usage_hours']
+    total_seconds = total_hours * 60 * 60
+    mac_model = get_mac_model()
+
+    if not mac_model:
+        logging.error("Failed to fetch Mac model")
+        return 0
+
+    if not os.path.exists(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json')):
+        logging.error("Embodied carbon data not found")
+        return 0
+
+    with open(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json')) as f:
+        embodied_co2eq_data = json.load(f)
+
+    embodied_co2eq = embodied_co2eq_data.get(mac_model, None)
+
+    # For now we return 0 if we can't find the model. We could think about taking an average of all models here.
+    if not embodied_co2eq:
+        logging.error(f"Mac model {mac_model} not found in embodied carbon data")
+        return 0
+
+    embodied_co2eq_total = sum(embodied_co2eq['EmissionsBreakdown'][key]['Emissions'] for key in ['Production', 'Transportation', 'EndOfLifeProcessing'])
+
+    return (embodied_co2eq_total / total_seconds) * time_delta_seconds * 1000 # in g
+
+
 def parse_powermetrics_output(output: str):
     global stats
 
@@ -422,16 +476,17 @@ def parse_powermetrics_output(output: str):
                 'top_processes': top_processes,
                 'timestamp': data['timestamp'],
                 'timezone': f"{time.tzname[0]}/{time.tzname[1]}",
-                'grid_intensity': grid_intensity,
-                'combined_energy': cpu_energy_data['combined_energy'],
-                'cpu_energy': cpu_energy_data['cpu_energy'],
-                'gpu_energy': cpu_energy_data['gpu_energy'],
-                'ane_energy': cpu_energy_data['ane_energy'],
+                'grid_intensity_cog': grid_intensity,
+                'combined_energy_mj': cpu_energy_data['combined_energy'],
+                'cpu_energy_mj': cpu_energy_data['cpu_energy'],
+                'gpu_energy_mj': cpu_energy_data['gpu_energy'],
+                'ane_energy_mj': cpu_energy_data['ane_energy'],
                 'energy_impact': cpu_energy_data['energy_impact'],
-                'co2eq': co2eq,
+                'co2eq_g': co2eq,
                 'hw_model': data['hw_model'],
                 'elapsed_ns': data['elapsed_ns'],
                 'thermal_pressure': data['thermal_pressure'],
+                'embodied_emissions_g': embodied_co2eq_g(round(data['elapsed_ns'] / 1_000_000_000)),
             }
 
             compressed_data = zlib.compress(str(json.dumps(upload_data, cls=RemoveNaNEncoder)).encode())
@@ -493,16 +548,19 @@ def check_DB(local_stop_signal, stime: SharedTime):
     # We first sleep for quite some time to give the program some time to add data to the DB
     sleeper(local_stop_signal, interval_sec)
 
-    thread_conn = sqlite3.connect(DATABASE_FILE)
-    tc = thread_conn.cursor()
 
     while not local_stop_signal.is_set():
         logging.debug('DB Check')
 
         n_ago = int((stime.get_tick() - interval_sec) * 1_000)
 
+        thread_conn = sqlite3.connect(DATABASE_FILE)
+        tc = thread_conn.cursor()
+
         tc.execute('SELECT MAX(time) FROM measurements')
         result = tc.fetchone()
+
+        thread_conn.close()
 
         if result and result[0]:
             if result[0] < n_ago:
@@ -510,6 +568,7 @@ def check_DB(local_stop_signal, stime: SharedTime):
                 local_stop_signal.set()
         else:
             logging.error('We are not getting values from the DB for checker thread.')
+            local_stop_signal.set()
 
         logging.debug('Power metrics running check')
         if not is_powermetrics_running():
@@ -517,9 +576,6 @@ def check_DB(local_stop_signal, stime: SharedTime):
             local_stop_signal.set()
 
         sleeper(local_stop_signal, interval_sec)
-
-
-    thread_conn.close()
 
 
 def optimize_DB(local_stop_signal):
@@ -664,8 +720,10 @@ def get_settings(debug = False):
             'upload_data': True,
             'resolve_coalitions': ['com.googlecode.iterm2', 'com.apple.terminal', 'com.vix.cron', 'org.alacritty'],
             'resolve_process': ['python',],
-            'gmt_auth_token': None,
+            'gmt_auth_token': 'DEFAULT',
             'electricitymaps_token': None,
+            'daily_computer_usage_hours': 6,
+            'overall_usage_years':3,
         }
 
 
@@ -678,14 +736,15 @@ def get_settings(debug = False):
         'resolve_process': ['python',],
         'gmt_auth_token': None,
         'electricitymaps_token': None,
+        'daily_computer_usage_hours': 6,
+        'overall_usage_years':3,
     }
 
-    script_dir = os.path.dirname(os.path.realpath(__file__))
 
     if os.path.exists('/etc/hogger_settings.ini'):
         config_path = '/etc/hogger_settings.ini'
-    elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
-        config_path = os.path.join(script_dir, 'settings.ini')
+    elif os.path.exists(os.path.join(SCRIPT_DIR, 'settings.ini')):
+        config_path = os.path.join(SCRIPT_DIR, 'settings.ini')
     else:
         config_path = None
 
@@ -705,6 +764,9 @@ def get_settings(debug = False):
             'resolve_process': config['DEFAULT'].get('resolve_process', default_settings['resolve_process']),
             'gmt_auth_token': config['DEFAULT'].get('gmt_auth_token', default_settings['gmt_auth_token']),
             'electricitymaps_token': config['DEFAULT'].get('electricitymaps_token', default_settings['electricitymaps_token']),
+            'daily_computer_usage_hours': int(config['DEFAULT'].getint('daily_computer_usage_hours', default_settings['daily_computer_usage_hours'])),
+            'overall_usage_years': int(config['DEFAULT'].getint('overall_usage_years', default_settings['overall_usage_years'])),
+
         }
     else:
         ret_settings = default_settings
@@ -719,6 +781,8 @@ def get_settings(debug = False):
 
 
 if __name__ == '__main__':
+
+
     parser = argparse.ArgumentParser(description=
                                      '''
                                      A power collection script that records a multitude of metrics and saves them to
@@ -770,7 +834,6 @@ if __name__ == '__main__':
 
     if not save_settings():
         logging.debug(f"Setting: {global_settings}")
-
 
     if args.website:
         print('This has been discontinued. You now need to log in to the Green Metrics Tool to see the data.')

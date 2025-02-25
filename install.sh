@@ -104,7 +104,7 @@ echo "Installation complete. Configuration updated at $CONFIG_FILE."
 # Setting up the background demon
 ###
 
-mv -f "$HOG_PATH/io.green-coding.hogger.plist /Library/LaunchDaemons/io.green-coding.hogger.plist"
+mv -f "$HOG_PATH/io.green-coding.hogger.plist" /Library/LaunchDaemons/io.green-coding.hogger.plist
 
 sed -i '' "s|PATH_PLEASE_CHANGE|$HOG_PATH|g" /Library/LaunchDaemons/io.green-coding.hogger.plist
 

@@ -74,7 +74,7 @@ update_config() {
     local value="$2"
     local file="$3"
     if grep -q "^${key} =" "$file"; then
-        sed -i "s|^${key} =.*|${key} = ${value}|" "$file"
+        sed -i '' "s|^${key} =.*|${key} = ${value}|" "$file"
     else
         echo "${key} = ${value}" >> "$file"
     fi
@@ -91,9 +91,9 @@ else
 fi
 
 if [[ $upload_data == "y" || $upload_data == "yes" ]]; then
-    sed -i "s|^upload_data =.*|upload_data = true|" "$CONFIG_FILE"
+    sed -i '' "s|^upload_data =.*|upload_data = true|" "$CONFIG_FILE"
 else
-    sed -i "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
+    sed -i '' "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
 fi
 
 

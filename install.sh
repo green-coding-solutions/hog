@@ -80,7 +80,7 @@ update_config() {
     fi
 }
 
-cat settings.ini > "$CONFIG_FILE"
+cat "$HOG_PATH/settings.ini" > "$CONFIG_FILE"
 
 if [[ -t 0 ]]; then
     read -p "In order for the app to work with all features, please allow us to upload some data. [Y/n]: " upload_data

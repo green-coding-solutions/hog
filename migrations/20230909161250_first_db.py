@@ -19,7 +19,8 @@ def upgrade(connection):
                 cpu_energy INT,
                 gpu_energy INT,
                 ane_energy INT,
-                energy_impact INT)'''
+                energy_impact INT,
+                co2eq FLOAT)'''
     connection.execute(tbl_power_measurements)
 
     tbl_top_processes = '''CREATE TABLE IF NOT EXISTS top_processes
@@ -31,7 +32,6 @@ def upgrade(connection):
                 machine_uuid TEXT,
                 powermetrics INT,
                 api_url STRING,
-                web_url STRING,
                 upload_delta INT,
                 upload_data NUMERIC)'''
     connection.execute(tbl_settings)

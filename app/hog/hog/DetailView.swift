@@ -15,7 +15,7 @@ import Charts
 import AppKit
 import Combine
 
-var db_path = "/Library/Application Support/io.green-coding.hog/db.db"
+var db_path = "/Library/Application Support/io.green-coding.hogger/db.db"
 
 
 public func isScriptRunning(scriptName: String) -> Bool {
@@ -148,12 +148,12 @@ func checkDB() -> Bool {
 
 
 class LoadingClass {
-    
+
     var lookBackTime:Int = 0
 
-    
+
     @Published var isLoading: Bool = false
-    
+
     func loadDataFrom() {
         fatalError("loadDataFrom() must be overridden in subclasses")
     }
@@ -177,20 +177,23 @@ class LoadingClass {
 }
 
 class ValueManager: LoadingClass, ObservableObject{
-    
+
 
     @Published var energy: Int64 = 0
     @Published var providerRunning: Bool = false
     @Published var topApp: String = "Loading..."
+    @Published var co2eq: Double = 0.0
 
 
     enum ValueType {
         case int
         case string
+        case double
     }
 
     override func loadDataFrom() {
         var db: OpaquePointer?
+        var energyQuery:String
 
 
         if sqlite3_open(db_path, &db) != SQLITE_OK { // Open database
@@ -199,7 +202,6 @@ class ValueManager: LoadingClass, ObservableObject{
         }
 
         var newEnergy: Int64 = 0
-        var energyQuery:String
         if self.lookBackTime == 0 {
             energyQuery = "SELECT COALESCE(sum(combined_energy), 0) FROM power_measurements;"
         }else{
@@ -207,6 +209,16 @@ class ValueManager: LoadingClass, ObservableObject{
         }
         if let result: Int64 = queryDatabase(db: db, query:energyQuery, type: .int) {
             newEnergy = result
+        }
+
+        var newCo2eq: Double = 0.0
+        if self.lookBackTime == 0 {
+            energyQuery = "SELECT COALESCE(sum(co2eq), 0) FROM power_measurements;"
+        }else{
+            energyQuery = "SELECT COALESCE(sum(co2eq), 0) FROM power_measurements WHERE time >= ((CAST(strftime('%s', 'now') AS INTEGER) * 1000) - \(self.lookBackTime));"
+        }
+        if let result: Double = queryDatabase(db: db, query:energyQuery, type: .double) {
+            newCo2eq = result
         }
 
 
@@ -240,13 +252,15 @@ class ValueManager: LoadingClass, ObservableObject{
 
         let newScriptRunning = isScriptRunning(scriptName: "power_logger.py")
 
+        sqlite3_close(db)
+
         DispatchQueue.main.async {
             self.energy = newEnergy
             self.providerRunning = newScriptRunning
             self.topApp = newTopApp
+            self.co2eq = newCo2eq
         }
 
-        sqlite3_close(db)
 
     }
 
@@ -259,6 +273,10 @@ class ValueManager: LoadingClass, ObservableObject{
                 switch type {
                 case .int:
                     let value = sqlite3_column_int64(queryStatement, 0)
+                    sqlite3_finalize(queryStatement)
+                    return value as? T
+                case .double:
+                    let value = sqlite3_column_double(queryStatement, 0)
                     sqlite3_finalize(queryStatement)
                     return value as? T
                 case .string:
@@ -276,7 +294,7 @@ class ValueManager: LoadingClass, ObservableObject{
 }
 
 struct TopProcess: Codable, Identifiable {
-    let id: UUID = UUID()  // Add this line if you want a unique identifier
+    let id = UUID()
     let name: String
     let energy_impact: Int64
     let cputime_per: Int32
@@ -425,7 +443,8 @@ class ChartData: LoadingClass, ObservableObject, RandomAccessCollection {
                     SUM(cpu_energy),
                     SUM(gpu_energy),
                     SUM(ane_energy),
-                    SUM(energy_impact)
+                    SUM(energy_impact),
+                    SUM(co2eq)
                 FROM
                     power_measurements
                 GROUP BY
@@ -438,10 +457,11 @@ class ChartData: LoadingClass, ObservableObject, RandomAccessCollection {
             var newPoints: [DataPoint] = []
             while sqlite3_step(queryStatement) == SQLITE_ROW {
                 let id = sqlite3_column_int64(queryStatement, 0)
-                let combined_energy = sqlite3_column_int64(queryStatement, 2)
-                let cpu_energy = sqlite3_column_int64(queryStatement, 3)
-                let gpu_energy = sqlite3_column_int64(queryStatement, 4)
-                let ane_energy = sqlite3_column_int64(queryStatement, 5)
+                let combined_energy = sqlite3_column_int64(queryStatement, 1)
+                let cpu_energy = sqlite3_column_int64(queryStatement, 2)
+                let gpu_energy = sqlite3_column_int64(queryStatement, 3)
+                let ane_energy = sqlite3_column_int64(queryStatement, 4)
+
                 let time = Date(timeIntervalSince1970: Double(id) / 1000.0)
 
                 let dataPoint = DataPoint(id: id, combined_energy: combined_energy, cpu_energy: cpu_energy, gpu_energy: gpu_energy, ane_energy: ane_energy, time: time)
@@ -490,7 +510,7 @@ struct PointsGraph: View {
 struct TopProcessTable: View {
     @ObservedObject var tpData: TopProcessData
     @State private var sortOrder = [
-        //KeyPathComparator(\TopProcess.name, order: .forward),
+        KeyPathComparator(\TopProcess.name, order: .forward),
         KeyPathComparator(\TopProcess.energy_impact, order: .forward),
         KeyPathComparator(\TopProcess.cputime_per, order: .forward),
     ]
@@ -514,7 +534,7 @@ struct TopProcessTable: View {
             if tpData.isEmpty {
             } else {
                 VStack{
-                    Table(tpData, sortOrder: $sortOrder) {
+                    Table(tpData.lines, sortOrder: $sortOrder) {
                         TableColumn(""){ line in
                             Image(nsImage: getIconByAppName(appName: line.name) ?? NSImage())
                                 .resizable()
@@ -523,8 +543,12 @@ struct TopProcessTable: View {
 
                         }.width(20)
 
-                        TableColumn("Name", value: \TopProcess.name)
-
+                        TableColumn("Name", value: \TopProcess.name) { line in
+                            Text(line.name)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .help(line.name)
+                        }
                         TableColumn("Energy Impact", value: \TopProcess.energy_impact){ line in
                             Text(String(line.energy_impact))
                             .font(.system(.body, design: .monospaced))
@@ -536,11 +560,11 @@ struct TopProcessTable: View {
 
                         }
                     }
-                    .onChange(of: sortOrder) { newOrder in
-                        tpData.sort(using: newOrder)
-                    }.foregroundColor(tableColour)
+                    .onChange(of: sortOrder, initial: true, {
+                        tpData.sort(using: sortOrder)
+                    }).foregroundColor(tableColour)
                     .tableStyle(.bordered(alternatesRowBackgrounds: true))
-                    
+
                     HStack {
                         Spacer()  // Pushes the Link to the right side.
                         Link("Description", destination: URL(string: "https://github.com/green-coding-solutions/hog#the-desktop-app")!)
@@ -569,12 +593,12 @@ struct TextInputView: View {
 
 
 struct DataView: View {
-    
+
     @StateObject var chartData = ChartData()
     @StateObject var lineData = TopProcessData()
     @StateObject var valueManager = ValueManager()
     @StateObject var settingsManager = SettingsManager()
-    
+
     @State private var isHovering = false
     @State private var refreshFlag = false
 
@@ -611,9 +635,9 @@ struct DataView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("This is a very minimalistic overview of your energy usage.")
                     }
-                    
+
                     Spacer(minLength: 10)
-                    
+
                     Button(action: {
                         self.refresh()
                     }) {
@@ -624,16 +648,18 @@ struct DataView: View {
                     }) {
                         Image(systemName: "x.circle")
                     }
-                    
+
                 }
                 VStack{
-                    
+
                     VStack(spacing: 0) {
                         if valueManager.isLoading {
                             Text("Loading")
                         } else {
                             ProcessBadge(title: "App with the highest energy usage", color: Color("chartColor2"), process: valueManager.topApp)
                             EnergyBadge(title: "System energy usage", color: Color("chartColor2"), image: "clock.badge.checkmark", value: valueManager.energy)
+                            CO2Badge(title: "gCO2-eq", color: Color("chartColor2"), image: "exclamationmark.icloud", value: valueManager.co2eq)
+
                             if valueManager.providerRunning {
                                 TextBadge(title: "", color: Color("chartColor2"), image: "checkmark.seal", value: "All measurement systems are functional")
                             } else {
@@ -658,21 +684,13 @@ struct DataView: View {
                             //                            TextInputView(text: $text, isPresented: $isTextInputViewPresented)
                             //                        }
                         }
-                        Button(action: {
-                            if let url = URL(string: "\(settingsManager.web_url)\(settingsManager.machine_uuid)") {
-                                NSWorkspace.shared.open(url)
-                            }
-                        }) {
-                            Text("View Detailed Analytics")
-                                .padding(10)
-                        }
-                        
-                        
+
+
                     }
-                    
+
                     PointsGraph(chartData: chartData)
                     TopProcessTable(tpData: lineData)
-                    
+
                 }
             }
 
@@ -738,6 +756,28 @@ func EnergyBadge(title: String, color: Color, image: String, value: Int64)->some
 }
 
 @ViewBuilder
+func CO2Badge(title: String, color: Color, image: String, value: Double)->some View {
+    if value == 0.0 {
+        EmptyView()
+    } else {
+        HStack {
+            Image(systemName: image)
+                .font(.title2)
+                .foregroundColor(color)
+                .padding(10)
+
+            Text(String(format: "%.4f", value))
+                .font(.title2.bold())
+
+            Text(title)
+                .font(.caption2.bold())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+
+@ViewBuilder
 func TextBadge(title: String, color: Color, image: String, value: String)->some View {
     HStack {
         Image(systemName: image)
@@ -769,7 +809,7 @@ class WindowFocusTracker: ObservableObject {
 }
 
 enum TabSelection: Hashable {
-    case last5Minutes, last24Hours, allTime, settings
+    case last5Minutes, last24Hours, allTime, embodiedCarbon, settings
 }
 
 
@@ -783,7 +823,7 @@ class ViewModel: ObservableObject {
 }
 
 struct DetailView: View {
-    
+
     @ObservedObject var windowFocusTracker = WindowFocusTracker()
     @ObservedObject var viewModel = ViewModel()
     @Environment(\.colorScheme) var colorScheme
@@ -798,28 +838,35 @@ struct DetailView: View {
                             Label("Last 5 Minutes", systemImage: "list.dash")
                         }
                         .tag(TabSelection.last5Minutes)
-                    
-                    
+
+
                     DataView(lookBackTime: 86400000, viewModel: viewModel, whoAmI: TabSelection.last24Hours)
                         .tabItem {
                             Label("Last 24 Hours", systemImage: "square.and.pencil")
                         }
                         .tag(TabSelection.last24Hours)
-                    
-                    
+
+
                     DataView(viewModel: viewModel, whoAmI: TabSelection.allTime)
                         .tabItem {
                             Label("All Time", systemImage: "square.and.pencil")
                         }
                         .tag(TabSelection.allTime)
-                    
-                    
+
+                    EmbodiedCarbonView(viewModel: viewModel, whoAmI: TabSelection.embodiedCarbon)
+                        .tabItem {
+                            Label("Embodied Carbon", systemImage: "square.and.pencil")
+                        }
+                        .tag(TabSelection.embodiedCarbon)
+
+
                     SettingsView(viewModel: viewModel, whoAmI: TabSelection.settings)
                         .tabItem {
                             Label("Settings", systemImage: "square.and.pencil")
                         }
                         .tag(TabSelection.settings)
-                    
+
+
                 }
                 .padding()
                 .background(colorScheme == .light ? Color.white : Color.black)

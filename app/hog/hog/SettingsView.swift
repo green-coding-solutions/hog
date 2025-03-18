@@ -9,6 +9,90 @@ import SwiftUI
 import SQLite3
 import Charts
 import AppKit
+import Foundation
+
+
+func createLaunchAgent() {
+
+    guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+        print("No bundle identifier found.")
+        return
+    }
+
+    guard let executablePath = Bundle.main.executableURL?.path else {
+           print("No executable path found.")
+           return
+    }
+
+    let launchAgentsURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+
+    let plistURL = launchAgentsURL.appendingPathComponent("\(bundleIdentifier).plist")
+
+    let plist: [String: Any] = [
+        "Label": bundleIdentifier as Any,
+        "ProgramArguments": [executablePath],
+        "RunAtLoad": false,
+        "KeepAlive": false,
+        "LimitLoadToSessionType": "Aqua"
+    ]
+
+    do {
+        let xmlData = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try FileManager.default.createDirectory(at: launchAgentsURL, withIntermediateDirectories: true, attributes: nil)
+        try xmlData.write(to: plistURL)
+    } catch {
+        print("Failed to create launch agent: \(error)")
+    }
+
+
+
+    let task = Process()
+    task.launchPath = "/bin/bash"
+    task.arguments = ["-c", "launchctl bootstrap gui/`id -u` \(plistURL.path())"]
+    task.launch()
+    task.waitUntilExit()
+}
+
+func removeLaunchAgent() {
+    guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+        print("No bundle identifier found.")
+        return
+    }
+
+    let launchAgentsURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+
+    let plistURL = launchAgentsURL.appendingPathComponent("\(bundleIdentifier).plist")
+
+    guard FileManager.default.fileExists(atPath: plistURL.path) else {
+        print("No Launch Agent to remove at \(plistURL.path())")
+        return
+    }
+
+    let unloadTask = Process()
+    unloadTask.launchPath = "/bin/bash"
+    unloadTask.arguments = ["-c", "launchctl bootout gui/`id -u` \(plistURL.path())"]
+    unloadTask.launch()
+    unloadTask.waitUntilExit()
+
+    do {
+        try FileManager.default.removeItem(at: plistURL)
+        print("Launch Agent removed successfully.")
+    } catch {
+        print("Failed to remove Launch Agent: \(error)")
+    }
+}
+
+func isLaunchAgentInstalled() -> Bool {
+    guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+        return false
+    }
+    let launchAgentsURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+    let plistURL = launchAgentsURL.appendingPathComponent("\(bundleIdentifier).plist")
+    return FileManager.default.fileExists(atPath: plistURL.path)
+}
 
 
 class SettingsManager: ObservableObject {
@@ -115,7 +199,7 @@ struct SettingsView: View {
         self.viewModel = viewModel
         self.whoAmI = whoAmI
     }
-    
+
     var body: some View {
         VStack(alignment: .leading) {
             HStack {

@@ -205,17 +205,21 @@ def upload_data_to_endpoint(local_stop_signal):
             })
 
         request_data = json.dumps(payload).encode('utf-8')
+        headers = {'content-type': 'application/json'}
+        if global_settings['gmt_auth_token']:
+            headers['X-Authentication'] = global_settings['gmt_auth_token']
+
+        # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 60 seconds and if it hasn't
+        # been canceled we kill everything
+        kill_timer = threading.Timer(60.0, kill_program)
+        kill_timer.start()
+
         req = urllib.request.Request(url=global_settings['api_url'],
                                         data=request_data,
                                         headers={'content-type': 'application/json'},
                                         method='POST')
 
         logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
-
-        # As sometimes the urllib waits for ever ignoring the timeout we set a signal for 30 seconds and if it hasn't
-        # been canceled we kill everything
-        kill_timer = threading.Timer(60.0, kill_program)
-        kill_timer.start()
 
         try:
             start_time = time.time()

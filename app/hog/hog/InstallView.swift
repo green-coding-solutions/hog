@@ -137,7 +137,7 @@ struct InstallView: View {
             }
             .alert(isPresented: $showingAlert) {
                 Alert(title: Text("There was an error copying demo data."),
-                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-soltions/hog/issues/new"),
+                      message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-solutions/hog/issues/new"),
                       dismissButton: .default(Text("Got it!")))
             }
             Divider()

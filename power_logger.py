@@ -23,15 +23,19 @@ import threading
 import logging
 import select
 import math
+from functools import lru_cache
 
 from datetime import timezone
 from pathlib import Path
 
 from libs import caribou
 
-VERSION = '0.5'
+VERSION = '0.6'
 
 LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 
 # Shared variable to signal the thread to stop
 stop_signal = threading.Event()
@@ -51,7 +55,7 @@ class SharedTime:
 
 
 
-APP_NAME = 'io.green-coding.hog'
+APP_NAME = 'io.green-coding.hogger'
 APP_SUPPORT_PATH = Path(f"/Library/Application Support/{APP_NAME}")
 APP_SUPPORT_PATH.mkdir(parents=True, exist_ok=True)
 
@@ -78,7 +82,7 @@ def kill_program():
     # We set the stop_signal for everything to shut down in an orderly fashion
     global stop_signal
     stop_signal.set()
-    logging.info('Stopping program due to an inconsistent state of the program. Probably the upload blocking')
+    logging.info('Stopping program due to an inconsistent state of the program.')
     time.sleep(5) # Give everything some time to shutdown
     # Now we need to exit the program as the upload thread is not responding and needs to be killed
     os._exit(5)
@@ -117,7 +121,7 @@ def sleeper(stop_event, duration):
 def run_powermetrics(local_stop_signal, filename: str = None):
     buffer = []
 
-    def process_line(line, buffer):
+    def process_line(line):
         line = line.strip().replace('&', '&amp;')
         buffer.append(line)
 
@@ -132,7 +136,7 @@ def run_powermetrics(local_stop_signal, filename: str = None):
         logging.info(f"Reading file {filename}")
         with open(filename, 'r', encoding='utf-8') as file:
             for line in file.readlines():
-                process_line(line, buffer)
+                process_line(line)
 
     else:
         cmd = ['powermetrics',
@@ -154,6 +158,12 @@ def run_powermetrics(local_stop_signal, filename: str = None):
                     # This is a little hacky. The problem is that select just reads data and doesn't respect the lines
                     # so it happens that we read in the middle of a line.
                     data = rlist[0].read()
+
+                    if data == '':
+                        logging.error('EOF reached: the subprocess has closed its stdout.')
+                        local_stop_signal.set()
+                        break
+
                     data = partial_buffer + data
                     lines = data.splitlines()
                     try:
@@ -163,7 +173,7 @@ def run_powermetrics(local_stop_signal, filename: str = None):
                             partial_buffer = ''
 
                         for line in lines:
-                            process_line(line, buffer)
+                            process_line(line)
                     except IndexError:
                         # This happens when the process is killed before we exit here so stop_signal should be set. If not
                         # there is a problem with powermetrics and we should report and exit.
@@ -173,10 +183,11 @@ def run_powermetrics(local_stop_signal, filename: str = None):
 
 
 def upload_data_to_endpoint(local_stop_signal):
-    thread_conn = sqlite3.connect(DATABASE_FILE)
-    tc = thread_conn.cursor()
 
     while not local_stop_signal.is_set():
+        thread_conn = sqlite3.connect(DATABASE_FILE)
+        tc = thread_conn.cursor()
+
         # We need to limit the amount of data here as otherwise the payload becomes to big
         tc.execute('SELECT id, time, data FROM measurements WHERE uploaded = 0 LIMIT 10;')
         rows = tc.fetchall()
@@ -193,7 +204,9 @@ def upload_data_to_endpoint(local_stop_signal):
             settings_upload = global_settings.copy()
             # We don't need this in the DB on the server
             del settings_upload['api_url']
-            del settings_upload['web_url']
+            del settings_upload['gmt_auth_token']
+            del settings_upload['electricitymaps_token']
+
             settings_upload['client_version'] = VERSION
 
             payload.append({
@@ -216,7 +229,7 @@ def upload_data_to_endpoint(local_stop_signal):
 
         req = urllib.request.Request(url=global_settings['api_url'],
                                         data=request_data,
-                                        headers={'content-type': 'application/json'},
+                                        headers=headers,
                                         method='POST')
 
         logging.info(f"Uploading {len(payload)} rows to: {global_settings['api_url']}")
@@ -242,28 +255,28 @@ def upload_data_to_endpoint(local_stop_signal):
             logging.debug(f"Upload exception: {exc}")
             kill_timer.cancel()
             sleeper(local_stop_signal, global_settings['upload_delta']) # Sleep if there is an error
-    thread_conn.close()
 
-
-
+        thread_conn.close()
 
 def find_top_processes(data: list, elapsed_ns:int):
     # As iterm2 will probably show up as it spawns the processes called from the shell we look at the tasks
-    new_data = []
-    for coalition in data:
-        if coalition['name'].lower() in global_settings['resolve_coalitions'] or coalition['name'].strip() == '':
-            new_data.extend(coalition['tasks'])
-        else:
-            new_data.append(coalition)
-
-    for p in sorted(new_data, key=lambda k: k['energy_impact'], reverse=True)[:10]:
-        yield{
+    # new_data = []
+    # for coalition in data:
+    #     if coalition['name'].lower() in global_settings['resolve_coalitions'] or coalition['name'].strip() == '':
+    #         new_data.extend(coalition['tasks'])
+    #     else:
+    #         new_data.append(coalition)
+    output = []
+    for p in sorted(data, key=lambda k: k['energy_impact'], reverse=True)[:15]:
+        output.append({
             'name': p['name'],
             # Energy_impact and cputime are broken so we need to use the per_s and convert them
             # Check the https://www.green-coding.io/blog/ for details
             'energy_impact': round((p['energy_impact_per_s'] / 1_000_000_000) * elapsed_ns),
-            'cputime_ns': ((p['cputime_ms_per_s'] * 1_000_000)  / 1_000_000_000) * elapsed_ns,
-        }
+            'cputime_ms': p['cputime_ms_per_s'] * (elapsed_ns / 1_000_000_000),
+        })
+    return output
+
 
 class RemoveNaNEncoder(json.JSONEncoder):
     def encode(self, obj):
@@ -281,29 +294,134 @@ class RemoveNaNEncoder(json.JSONEncoder):
         return super(RemoveNaNEncoder, self).encode(cleaned_obj)
 
 
+def get_cmdline_shell_ps(pid):
+    try:
+        result = subprocess.run(
+            ['ps', '-p', str(pid), '-o', 'command='],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return None
+
+def resolve_names(data):
+    updated_coalitions = []
+
+    for coalition in data['coalitions']:
+        name = coalition['name'].strip().lower()
+        if name in global_settings['resolve_coalitions'] or not name:
+            tasks = coalition.get('tasks', [])
+            updated_coalitions.extend(tasks if isinstance(tasks, list) else [coalition])
+        else:
+            updated_coalitions.append(coalition)
+
+    for i, coalition in enumerate(updated_coalitions):
+        if coalition['name'].lower().strip() in global_settings['resolve_process']:
+            if cmd := get_cmdline_shell_ps(coalition['pid']):
+                updated_coalitions[i]['name'] = cmd
+
+    data['coalitions'] = updated_coalitions
+
+    return data
+
+get_grid_intensity_cache = {'value': None, 'timestamp': 0}
+
+def get_grid_intensity():
+    global get_grid_intensity_cache
+
+    if not global_settings.get('electricitymaps_token'):
+        return None
+
+    if time.time() - get_grid_intensity_cache['timestamp'] < 900:
+        return get_grid_intensity_cache['value']
+
+    url = 'https://api.electricitymap.org/v3/carbon-intensity/latest'
+    headers = {'auth-token': global_settings['electricitymaps_token']}
+
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            response_data = json.loads(response.read().decode())
+            get_grid_intensity_cache = {
+                'value': response_data['carbonIntensity'],
+                'timestamp': time.time()
+            }
+    except (urllib.error.HTTPError,
+            ConnectionRefusedError,
+            urllib.error.URLError,
+            http.client.RemoteDisconnected,
+            ConnectionResetError) as exc:
+        logging.error(f"Failed to fetch grid intensity: {exc}")
+    finally:
+        return get_grid_intensity_cache['value']  # Return last cached value on error
+
+def get_mac_model():
+    try:
+        result = subprocess.run(
+            ['system_profiler', 'SPHardwareDataType'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        for line in result.stdout.splitlines():
+            if 'Model Identifier' in line:
+                return line.split(":")[1].strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error occurred while fetching Mac model: {e}")
+        return None
+
+@lru_cache(maxsize=10) # This should normally only cache one value as we use seconds
+def embodied_co2eq_g(time_delta_seconds: int):
+    total_hours = global_settings['overall_usage_years'] * 365 * global_settings['daily_computer_usage_hours']
+    total_seconds = total_hours * 60 * 60
+    mac_model = get_mac_model()
+
+    if not mac_model:
+        logging.error("Failed to fetch Mac model")
+        return 0
+
+    if not os.path.exists(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json')):
+        logging.error("Embodied carbon data not found")
+        return 0
+
+    with open(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json')) as f:
+        embodied_co2eq_data = json.load(f)
+
+    embodied_co2eq = embodied_co2eq_data.get(mac_model, None)
+
+    # For now we return 0 if we can't find the model. We could think about taking an average of all models here.
+    if not embodied_co2eq:
+        logging.error(f"Mac model {mac_model} not found in embodied carbon data")
+        return 0
+
+    embodied_co2eq_total = sum(embodied_co2eq['EmissionsBreakdown'][key]['Emissions'] for key in ['Production', 'Transportation', 'EndOfLifeProcessing'])
+
+    return (embodied_co2eq_total / total_seconds) * time_delta_seconds * 1000 # in g
+
 
 def parse_powermetrics_output(output: str):
     global stats
 
     for data in output.encode('utf-8').split(b'\x00'):
         if data:
+            grid_intensity = get_grid_intensity()
 
             if data == b'powermetrics must be invoked as the superuser\n':
                 raise PermissionError('You need to run this script as root!')
 
             try:
-                data=plistlib.loads(data)
-                data['timezone'] = time.tzname
+                data = plistlib.loads(data)
+                data = resolve_names(data)
+                # Sql can not handle timestamps so we convert them to milliseconds
                 data['timestamp'] = int(data['timestamp'].replace(tzinfo=timezone.utc).timestamp() * 1e3)
             except xml.parsers.expat.ExpatError as exc:
                 logging.error(f"XML Error:\n{data}")
                 raise exc
 
-            compressed_data = zlib.compress(str(json.dumps(data, cls=RemoveNaNEncoder)).encode())
-            compressed_data_str = base64.b64encode(compressed_data).decode()
-
-            c.execute('INSERT INTO measurements (time, data, uploaded) VALUES (?, ?, 0)',
-                    (data['timestamp'], compressed_data_str))
 
             cpu_energy_data = {}
             energy_impact = round(data['all_tasks'].get('energy_impact_per_s') * data['elapsed_ns'] / 1_000_000_000)
@@ -325,24 +443,57 @@ def parse_powermetrics_output(output: str):
                     'energy_impact': energy_impact,
                 }
 
+            if grid_intensity:
+                co2eq = cpu_energy_data['combined_energy'] * grid_intensity / 3_600_000_000 # We need to convert to kWh from mJ
+            else:
+                co2eq = None
+
+
             c.execute('''INSERT INTO power_measurements
-                      (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact) VALUES
-                      (?, ?, ?, ?, ?, ?)''',
+                      (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact, co2eq ) VALUES
+                      (?, ?, ?, ?, ?, ?, ?)''',
                     (data['timestamp'],
                      cpu_energy_data['combined_energy'],
                      cpu_energy_data['cpu_energy'],
                      cpu_energy_data['gpu_energy'],
                      cpu_energy_data['ane_energy'],
-                     cpu_energy_data['energy_impact']))
+                     cpu_energy_data['energy_impact'],
+                     co2eq))
 
             for key in stats:
                 stats[key] += cpu_energy_data[key]
 
-
-            for process in find_top_processes(data['coalitions'], data['elapsed_ns']):
-                cpu_per = int(process['cputime_ns'] / data['elapsed_ns'] * 100)
+            top_processes = find_top_processes(data['coalitions'], data['elapsed_ns'])
+            for process in top_processes:
                 c.execute('INSERT INTO top_processes (time, name, energy_impact, cputime_per) VALUES (?, ?, ?, ?)',
-                    (data['timestamp'], process['name'], process['energy_impact'], cpu_per))
+                    (data['timestamp'], process['name'], process['energy_impact'], process['energy_impact']))
+
+
+            # Create the new upload data structure
+            upload_data = {
+                'machine_uuid': machine_uuid,
+                'timestamp': data['timestamp'],
+                'top_processes': top_processes,
+                'timestamp': data['timestamp'],
+                'timezone': f"{time.tzname[0]}/{time.tzname[1]}",
+                'grid_intensity_cog': grid_intensity,
+                'combined_energy_mj': cpu_energy_data['combined_energy'],
+                'cpu_energy_mj': cpu_energy_data['cpu_energy'],
+                'gpu_energy_mj': cpu_energy_data['gpu_energy'],
+                'ane_energy_mj': cpu_energy_data['ane_energy'],
+                'energy_impact': cpu_energy_data['energy_impact'],
+                'co2eq_g': co2eq,
+                'hw_model': data['hw_model'],
+                'elapsed_ns': data['elapsed_ns'],
+                'thermal_pressure': data['thermal_pressure'],
+                'embodied_emissions_g': embodied_co2eq_g(round(data['elapsed_ns'] / 1_000_000_000)),
+            }
+
+            compressed_data = zlib.compress(str(json.dumps(upload_data, cls=RemoveNaNEncoder)).encode())
+            compressed_data_str = base64.b64encode(compressed_data).decode()
+
+            c.execute('INSERT INTO measurements (time, data, uploaded) VALUES (?, ?, 0)',
+                    (data['timestamp'], compressed_data_str))
 
             conn.commit()
             logging.debug('Data added to the DB')
@@ -350,15 +501,14 @@ def parse_powermetrics_output(output: str):
 def save_settings():
     global machine_uuid
 
-    c.execute('SELECT machine_uuid, powermetrics, api_url, web_url, upload_delta, upload_data FROM settings ORDER BY time DESC LIMIT 1;')
+    c.execute('SELECT machine_uuid, powermetrics, api_url, upload_delta, upload_data FROM settings ORDER BY time DESC LIMIT 1;')
     result = c.fetchone()
 
     if result:
-        machine_uuid, last_powermetrics, last_api_url, last_web_url, last_upload_delta, last_upload_data = result
+        machine_uuid, last_powermetrics, last_api_url, last_upload_delta, last_upload_data = result
 
         if (last_powermetrics == global_settings['powermetrics'] and
             last_api_url.strip() == global_settings['api_url'].strip() and
-            last_web_url.strip() == global_settings['web_url'].strip() and
             last_upload_delta == global_settings['upload_delta'] and
             last_upload_data == global_settings['upload_data']):
             return False
@@ -366,13 +516,12 @@ def save_settings():
         machine_uuid = str(uuid.uuid1())
 
     c.execute('''INSERT INTO settings
-            (time, machine_uuid, powermetrics, api_url, web_url, upload_delta, upload_data) VALUES
-            (?, ?, ?, ?, ?, ?, ?)''', (
+            (time, machine_uuid, powermetrics, api_url, upload_delta, upload_data) VALUES
+            (?, ?, ?, ?, ?, ?)''', (
                 int(time.time()),
                 machine_uuid,
                 global_settings['powermetrics'],
                 global_settings['api_url'].strip(),
-                global_settings['web_url'].strip(),
                 global_settings['upload_delta'],
                 global_settings['upload_data'],
             ))
@@ -399,16 +548,19 @@ def check_DB(local_stop_signal, stime: SharedTime):
     # We first sleep for quite some time to give the program some time to add data to the DB
     sleeper(local_stop_signal, interval_sec)
 
-    thread_conn = sqlite3.connect(DATABASE_FILE)
-    tc = thread_conn.cursor()
 
     while not local_stop_signal.is_set():
         logging.debug('DB Check')
 
         n_ago = int((stime.get_tick() - interval_sec) * 1_000)
 
+        thread_conn = sqlite3.connect(DATABASE_FILE)
+        tc = thread_conn.cursor()
+
         tc.execute('SELECT MAX(time) FROM measurements')
         result = tc.fetchone()
+
+        thread_conn.close()
 
         if result and result[0]:
             if result[0] < n_ago:
@@ -416,6 +568,7 @@ def check_DB(local_stop_signal, stime: SharedTime):
                 local_stop_signal.set()
         else:
             logging.error('We are not getting values from the DB for checker thread.')
+            local_stop_signal.set()
 
         logging.debug('Power metrics running check')
         if not is_powermetrics_running():
@@ -425,13 +578,8 @@ def check_DB(local_stop_signal, stime: SharedTime):
         sleeper(local_stop_signal, interval_sec)
 
 
-    thread_conn.close()
-
-
 def optimize_DB(local_stop_signal):
     while not local_stop_signal.is_set():
-
-        sleeper(local_stop_signal, 3600) # We only need to optimize every hour
 
         logging.debug("Starting DB optimization for power_measurements")
 
@@ -450,7 +598,8 @@ def optimize_DB(local_stop_signal):
             SUM(cpu_energy),
             SUM(gpu_energy),
             SUM(ane_energy),
-            SUM(energy_impact)
+            SUM(energy_impact),
+            SUM(co2eq)
         FROM
             power_measurements
         WHERE
@@ -468,13 +617,14 @@ def optimize_DB(local_stop_signal):
                 cpu_energy INT,
                 gpu_energy INT,
                 ane_energy INT,
-                energy_impact INT
+                energy_impact INT,
+                co2eq FLOAT
             );
         """)
 
         insert_temp_query = """
-            INSERT INTO temp_power_measurements (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO temp_power_measurements (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact, co2eq)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
         """
         tc.executemany(insert_temp_query, aggregated_data)
 
@@ -484,7 +634,7 @@ def optimize_DB(local_stop_signal):
         tc.execute(delete_query, (one_week_ago,))
 
         insert_back_query = """
-            INSERT INTO power_measurements (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact)
+            INSERT INTO power_measurements (time, combined_energy, cpu_energy, gpu_energy, ane_energy, energy_impact, co2eq)
             SELECT * FROM temp_power_measurements;
         """
         tc.execute(insert_back_query)
@@ -542,7 +692,9 @@ def optimize_DB(local_stop_signal):
 
         logging.debug("Ending DB optimization")
 
-    thread_conn.close()
+        sleeper(local_stop_signal, 3600) # We only need to optimize every hour
+
+        thread_conn.close()
 
 
 def is_power_logger_running():
@@ -564,28 +716,35 @@ def get_settings(debug = False):
         return {
             'powermetrics' : 1000,
             'upload_delta': 5,
-            'api_url': 'http://api.green-coding.internal:9142/v1/hog/add',
-            'web_url': 'http://metrics.green-coding.internal:9142/hog-details.html?machine_uuid=',
+            'api_url': 'http://api.green-coding.internal:9142/v2/hog/add',
             'upload_data': True,
             'resolve_coalitions': ['com.googlecode.iterm2', 'com.apple.terminal', 'com.vix.cron', 'org.alacritty'],
+            'resolve_process': ['python',],
+            'gmt_auth_token': 'DEFAULT',
+            'electricitymaps_token': None,
+            'daily_computer_usage_hours': 6,
+            'overall_usage_years':3,
         }
 
 
     default_settings = {
         'powermetrics': 5000,
         'upload_delta': 300,
-        'api_url': 'https://api.green-coding.io/v1/hog/add',
-        'web_url': 'https://metrics.green-coding.io/hog-details.html?machine_uuid=',
+        'api_url': 'https://api.green-coding.io/v2/hog/add',
         'upload_data': True,
-        'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty'
+        'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty',
+        'resolve_process': ['python',],
+        'gmt_auth_token': None,
+        'electricitymaps_token': None,
+        'daily_computer_usage_hours': 6,
+        'overall_usage_years':3,
     }
 
-    script_dir = os.path.dirname(os.path.realpath(__file__))
 
-    if os.path.exists('/etc/hog_settings.ini'):
-        config_path = '/etc/hog_settings.ini'
-    elif os.path.exists(os.path.join(script_dir, 'settings.ini')):
-        config_path = os.path.join(script_dir, 'settings.ini')
+    if os.path.exists('/etc/hogger_settings.ini'):
+        config_path = '/etc/hogger_settings.ini'
+    elif os.path.exists(os.path.join(SCRIPT_DIR, 'settings.ini')):
+        config_path = os.path.join(SCRIPT_DIR, 'settings.ini')
     else:
         config_path = None
 
@@ -600,9 +759,14 @@ def get_settings(debug = False):
             'powermetrics': int(config['DEFAULT'].get('powermetrics', default_settings['powermetrics'])),
             'upload_delta': int(config['DEFAULT'].get('upload_delta', default_settings['upload_delta'])),
             'api_url': config['DEFAULT'].get('api_url', default_settings['api_url']),
-            'web_url': config['DEFAULT'].get('web_url', default_settings['web_url']),
             'upload_data': bool(config['DEFAULT'].getboolean('upload_data', default_settings['upload_data'])),
             'resolve_coalitions': config['DEFAULT'].get('resolve_coalitions', default_settings['resolve_coalitions']),
+            'resolve_process': config['DEFAULT'].get('resolve_process', default_settings['resolve_process']),
+            'gmt_auth_token': config['DEFAULT'].get('gmt_auth_token', default_settings['gmt_auth_token']),
+            'electricitymaps_token': config['DEFAULT'].get('electricitymaps_token', default_settings['electricitymaps_token']),
+            'daily_computer_usage_hours': int(config['DEFAULT'].getint('daily_computer_usage_hours', default_settings['daily_computer_usage_hours'])),
+            'overall_usage_years': int(config['DEFAULT'].getint('overall_usage_years', default_settings['overall_usage_years'])),
+
         }
     else:
         ret_settings = default_settings
@@ -610,10 +774,15 @@ def get_settings(debug = False):
     if not isinstance(ret_settings['resolve_coalitions'], list):
         ret_settings['resolve_coalitions'] = [x.strip().lower() for x in ret_settings['resolve_coalitions'].split(',')]
 
+    if not isinstance(ret_settings['resolve_process'], list):
+        ret_settings['resolve_process'] = [x.strip().lower() for x in ret_settings['resolve_process'].split(',')]
+
     return ret_settings
 
 
 if __name__ == '__main__':
+
+
     parser = argparse.ArgumentParser(description=
                                      '''
                                      A power collection script that records a multitude of metrics and saves them to
@@ -666,10 +835,8 @@ if __name__ == '__main__':
     if not save_settings():
         logging.debug(f"Setting: {global_settings}")
 
-
     if args.website:
-        print('Please visit this url for detailed analytics:')
-        print(f"{global_settings['web_url']}{machine_uuid}")
+        print('This has been discontinued. You now need to log in to the Green Metrics Tool to see the data.')
         sys.exit(0)
 
     # We need to introduce a a time holding obj as otherwise the times don't sync when the computer sleeps.

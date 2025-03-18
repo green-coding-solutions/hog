@@ -14,13 +14,14 @@ struct EmissionsBreakdown: Decodable {
     let Transportation: EmissionsDetail
     let ProductUse: EmissionsDetail?
     let EndOfLifeProcessing: EmissionsDetail?
-    
+
     // A computed property to unify keys
     var breakdownEntries: [(String, EmissionsDetail)] {
         var result: [(String, EmissionsDetail)] = []
         if let production = Production as EmissionsDetail? {
             result.append(("Production", production))
         }
+
         if let transportation = Transportation as EmissionsDetail? {
             result.append(("Transportation", transportation))
         }
@@ -28,11 +29,11 @@ struct EmissionsBreakdown: Decodable {
         if let productUse = ProductUse as EmissionsDetail?{
             result.append(("Product Use", productUse))
         }
-        
+
         if let eol = EndOfLifeProcessing as EmissionsDetail?{
             result.append(("End-of-life Processing", eol))
         }
-        
+
         return result
     }
 }
@@ -43,14 +44,14 @@ struct DeviceCarbonData: Decodable {
     let EmissionsBreakdown: EmissionsBreakdown
     let models: [String]?
     let date: String?
-    
+
     var totalEmissionsFormatted: String {
         if let total = TotalEmissions {
             return "\(total) kg CO₂e"
         }
         return "Data not available"
     }
-    
+
     var chartData: [(category: String, val: Double)] {
         return EmissionsBreakdown.breakdownEntries.map { ($0.0, $0.1.Emissions) }
     }
@@ -76,7 +77,7 @@ struct EmbodiedCarbonView: View {
             if devices.isEmpty {
                 Text("Loading data...")
             } else {
-                
+
                 Text("Your device has been selected. Please change if you want to see another device.")
                 Picker("Select a Device", selection: $selectedDeviceKey) {
                     ForEach(devices.keys.sorted(by: { devices[$0]!.Device < devices[$1]!.Device }), id: \.self) { key in
@@ -84,14 +85,14 @@ struct EmbodiedCarbonView: View {
                     }
                 }
                 .padding()
-                
+
                 // Display info about selected device
                 if let selectedData = devices[selectedDeviceKey] {
-                    
+
                     Text("Total Embodied Carbon: \(selectedData.totalEmissionsFormatted)")
                         .font(.title)
                         .padding()
-                    
+
                     Text("Emissions by phase in kg CO₂e")
                         .font(.title2)
                         .padding()
@@ -116,10 +117,10 @@ struct EmbodiedCarbonView: View {
                     .chartLegend(alignment: .center, spacing: 16)
 
 
-                    
+
 //                    print("Selected chart data: \(selectedData.chartData)")
 //
-//                    
+//
 //                    Chart {
 //                        ForEach(selectedData.chartData, id: \.category) { item in
 //                            SectorMark(angle: .value("Emissions", item.value))
@@ -140,8 +141,8 @@ struct EmbodiedCarbonView: View {
 //                    .chartLegend(.visible)
 //                    .frame(height: 300)
 //                    .padding()
-//                    
-                    
+//
+
                 } else {
                     Text("No data available for selected device.")
                 }
@@ -169,11 +170,11 @@ struct EmbodiedCarbonView: View {
             print("No data found")
             return
         }
-        
+
         do {
             let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] ?? [:]
             let decoder = JSONDecoder()
-            
+
             var tempDevices: [String: DeviceCarbonData] = [:]
             for (key, value) in json {
                 if let deviceData = try? JSONSerialization.data(withJSONObject: value),
@@ -181,9 +182,9 @@ struct EmbodiedCarbonView: View {
                     tempDevices[key] = decoded
                 }
             }
-            
+
             self.devices = tempDevices
-            
+
             // Try to select the user's device by default
             if let userModel = getMacModelIdentifier() {
                 self.modelIdentifier = userModel
@@ -197,7 +198,7 @@ struct EmbodiedCarbonView: View {
                 // If we can't get the user model, just pick the first device
                 self.selectedDeviceKey = devices.keys.first ?? ""
             }
-            
+
         } catch {
             print("Error parsing JSON: \(error)")
         }

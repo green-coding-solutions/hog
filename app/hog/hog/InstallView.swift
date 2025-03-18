@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct OneView: View {
 
@@ -83,6 +84,31 @@ struct ThreeView: View {
     }
 }
 
+struct BootToggleView: View {
+    @State private var isOn = true
+    @State private var previousState = true
+
+    var body: some View {
+        HStack {
+            Text("4)").font(.headline)
+            
+            Toggle("Start App on Login", isOn: $isOn)
+                .onReceive(Just(isOn)) { newValue in
+                    if newValue != previousState {
+                        if newValue {
+                            createLaunchAgent()
+                        } else {
+                            removeLaunchAgent()
+                        }
+                        previousState = newValue
+                    }
+                }
+                .onAppear {
+                    createLaunchAgent()
+                }
+        }
+    }
+}
 
 struct StepsView: View {
     var body: some View {
@@ -105,7 +131,8 @@ struct StepsView: View {
         OneView()
         TwoView()
         ThreeView()
-        Text("4) All done. Now check").font(.headline)
+        BootToggleView()
+        Text("5) All done. Now check").font(.headline)
 
     }
 }
@@ -123,18 +150,18 @@ struct InstallView: View {
             Button("Re-check if the power data is reported") {
                 viewModel.toggleRender()
 
-            }.padding()
-            Divider()
-            Text("If you just want to see the interface you can also load some demo data visualises what is possible with the hog.")
-            Button("View with demo data") {
-                guard let sourceURL = Bundle.main.url(forResource: "demo_db", withExtension: "db") else {
-                    print("Source file not found!")
-                    return
-                }
-                db_path = sourceURL.path()
-                viewModel.selectedTab = .allTime
-                viewModel.toggleRender()
             }
+//            Divider()
+//            Text("If you just want to see the interface you can also load some demo data visualises what is possible with the hog.")
+//            Button("View with demo data") {
+//                guard let sourceURL = Bundle.main.url(forResource: "demo_db", withExtension: "db") else {
+//                    print("Source file not found!")
+//                    return
+//                }
+//                db_path = sourceURL.path()
+//                viewModel.selectedTab = .allTime
+//                viewModel.toggleRender()
+//            }
             .alert(isPresented: $showingAlert) {
                 Alert(title: Text("There was an error copying demo data."),
                       message: Text("Please look at the logs and submit an issue! https://github.com/green-coding-solutions/hog/issues/new"),

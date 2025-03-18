@@ -46,7 +46,6 @@ func createLaunchAgent() {
     }
 
 
-
     let task = Process()
     task.launchPath = "/bin/bash"
     task.arguments = ["-c", "launchctl bootstrap gui/`id -u` \(plistURL.path())"]
@@ -100,8 +99,8 @@ class SettingsManager: ObservableObject {
     @Published var machine_uuid: String = "Loading ..."
     @Published var powermetrics: Int = 0
     @Published var api_url: String = "Loading ..."
-    @Published var web_url: String = "Loading ..."
     @Published var upload_data: Bool = true
+    @Published var startOnLogin: Bool = false
 
     @Published var upload_backlog: Int = 0
 
@@ -117,6 +116,8 @@ class SettingsManager: ObservableObject {
                 self.isLoading = false
             }
         }
+        self.startOnLogin = isLaunchAgentInstalled()
+
     }
 
     func loadDataFrom() {
@@ -127,13 +128,12 @@ class SettingsManager: ObservableObject {
             return
         }
 
-        let lastMeasurementQuery = "SELECT machine_uuid, powermetrics, api_url, web_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
+        let lastMeasurementQuery = "SELECT machine_uuid, powermetrics, api_url, upload_data FROM settings ORDER BY time DESC LIMIT 1;"
         var queryStatement: OpaquePointer?
 
         var new_machine_uuid = "Loading ..."
         var new_powermetrics: Int = 0
         var new_api_url = "Loading ..."
-        var new_web_url = "Loading ..."
         var upload_data = true
 
         if sqlite3_prepare_v2(db, lastMeasurementQuery, -1, &queryStatement, nil) == SQLITE_OK {
@@ -141,8 +141,7 @@ class SettingsManager: ObservableObject {
                 new_machine_uuid = String(cString: sqlite3_column_text(queryStatement, 0))
                 new_powermetrics = Int(sqlite3_column_int(queryStatement, 1))
                 new_api_url = String(cString: sqlite3_column_text(queryStatement, 2))
-                new_web_url = String(cString: sqlite3_column_text(queryStatement, 3))
-                upload_data = sqlite3_column_int(queryStatement, 4) != 0 // assuming it's stored as 0 for false, non-0 for true
+                upload_data = sqlite3_column_int(queryStatement, 3) != 0 // assuming it's stored as 0 for false, non-0 for true
             }
             sqlite3_finalize(queryStatement)
         }
@@ -165,7 +164,6 @@ class SettingsManager: ObservableObject {
             self.machine_uuid = new_machine_uuid
             self.powermetrics = new_powermetrics
             self.api_url = new_api_url
-            self.web_url = new_web_url
             self.upload_data = upload_data
             self.upload_backlog = new_upload_backlog
         }
@@ -232,11 +230,18 @@ struct SettingsView: View {
                 SettingDetailView(title: "Machine ID:", value: settingsManager.machine_uuid)
                 SettingDetailView(title: "Powermetrics Intervall:", value: "\(settingsManager.powermetrics)")
                 SettingDetailView(title: "Upload to URL:", value: settingsManager.api_url)
-                SettingDetailView(title: "Web View URL:", value: settingsManager.web_url)
                 SettingDetailView(title: "Upload data:", value: settingsManager.upload_data ? "Yes" : "No")
                 SettingDetailView(title: "Upload Backlog Count:", value: "\(settingsManager.upload_backlog)")
             }
-
+            Toggle("Start App on Login", isOn: $settingsManager.startOnLogin)
+                .onChange(of: settingsManager.startOnLogin) { newValue in
+                    if newValue {
+                        createLaunchAgent()
+                    } else {
+                        removeLaunchAgent()
+                    }
+                }
+                .padding(.top, 10)
         }
         .padding()
         .onReceive(viewModel.$selectedTab) { tab in

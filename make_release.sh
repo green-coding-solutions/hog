@@ -2,7 +2,7 @@
 
 files_to_zip=(
   "migrations/"
-  "io.green-coding.hog.plist"
+  "io.green-coding.hogger.plist"
   "power_logger.py"
   "libs/"
   "settings.ini"

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>io.green-coding.hog</string>
+    <string>io.green-coding.hogger</string>
 
     <key>ProgramArguments</key>
     <array>

@@ -1,0 +1,2635 @@
+{
+    "MacBookAir6,1": {
+        "Device": "11-inch MacBook Air (June 2013)",
+        "TotalEmissions": 320,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 75,
+                "Emissions": 240.0
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 16.0
+            },
+            "ProductUse": {
+                "Percentage": 19,
+                "Emissions": 60.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.2
+            }
+        },
+        "models": [
+            "MD711",
+            "MD712"
+        ],
+        "date": "June 2013"
+    },
+    "MacBookAir5,1": {
+        "Device": "11-inch MacBook Air (June 2012)",
+        "TotalEmissions": 300,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 61,
+                "Emissions": 183.0
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 15.0
+            },
+            "ProductUse": {
+                "Percentage": 32,
+                "Emissions": 96.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 6.0
+            }
+        },
+        "models": [
+            "MD223",
+            "MD224"
+        ],
+        "date": "June 2012"
+    },
+    "MacBookAir7,1": {
+        "Device": "11-inch MacBook Air (March 2015)",
+        "TotalEmissions": 430,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 82,
+                "Emissions": 352.6
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 17.2
+            },
+            "ProductUse": {
+                "Percentage": 13,
+                "Emissions": 55.9
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.3
+            }
+        },
+        "models": [
+            "MJVM2",
+            "MJVP2"
+        ],
+        "date": "March 2015"
+    },
+    "MacBookAir3,1": {
+        "Device": "11-inch MacBook Air (October 2010)",
+        "TotalEmissions": 280,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 58,
+                "Emissions": 162.4
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 19.6
+            },
+            "ProductUse": {
+                "Percentage": 34,
+                "Emissions": 95.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.8
+            }
+        },
+        "models": [
+            "MC505",
+            "MC506"
+        ],
+        "date": "October 2010"
+    },
+    "MacBook10,1": {
+        "Device": "12-inch MacBook (October 2018)",
+        "TotalEmissions": 233,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 83,
+                "Emissions": 193.39
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 9.32
+            },
+            "ProductUse": {
+                "Percentage": 12,
+                "Emissions": 27.96
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.33
+            }
+        },
+        "models": [
+            "MNYF2",
+            "MNYG2",
+            "MNYH2",
+            "MNYJ2",
+            "MRQN2",
+            "MRQP2"
+        ],
+        "date": "October 2018"
+    },
+    "MacBook8,1": {
+        "Device": "12-inch MacBook (March 2015)",
+        "TotalEmissions": 470,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 84,
+                "Emissions": 394.8
+            },
+            "Transportation": {
+                "Percentage": 3,
+                "Emissions": 14.1
+            },
+            "ProductUse": {
+                "Percentage": 12,
+                "Emissions": 56.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.7
+            }
+        },
+        "models": [
+            "MF855",
+            "MJY32",
+            "MK4M2",
+            "MF865",
+            "MJY42",
+            "MK4N2"
+        ],
+        "date": "March 2015"
+    },
+    "MacBookPro18,3": {
+        "Device": "14-inch MacBook Pro (October 2021)",
+        "TotalEmissions": 271,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 72,
+                "Emissions": 195.12
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 13.55
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 59.62
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.71
+            }
+        },
+        "date": "October 2021",
+        "models": []
+    },
+    "MacBookAir8,2": {
+        "Device": "13-inch MacBook Air with Retina (July 2019)",
+        "TotalEmissions": 176,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 77,
+                "Emissions": 135.52
+            },
+            "Transportation": {
+                "Percentage": 17,
+                "Emissions": 29.92
+            },
+            "ProductUse": {
+                "Percentage": 6,
+                "Emissions": 10.56
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.76
+            }
+        },
+        "date": "July 2019",
+        "models": []
+    },
+    "MacBookAir10,1": {
+        "Device": "13-inch MacBook Air (November 2020)",
+        "TotalEmissions": 161,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 76,
+                "Emissions": 122.36
+            },
+            "Transportation": {
+                "Percentage": 8,
+                "Emissions": 12.88
+            },
+            "ProductUse": {
+                "Percentage": 15,
+                "Emissions": 24.15
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.61
+            }
+        },
+        "date": "November 2020",
+        "models": []
+    },
+    "MacBookAir9,1": {
+        "Device": "13-inch MacBook Air with Retina (March 2020)",
+        "TotalEmissions": 174,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 77,
+                "Emissions": 133.98
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 12.18
+            },
+            "ProductUse": {
+                "Percentage": 15,
+                "Emissions": 26.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.74
+            }
+        },
+        "date": "March 2020",
+        "models": []
+    },
+    "MacBookAir8,1": {
+        "Device": "13-inch MacBook Air with Retina (October 2018)",
+        "TotalEmissions": 176,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 77,
+                "Emissions": 135.52
+            },
+            "Transportation": {
+                "Percentage": 17,
+                "Emissions": 29.92
+            },
+            "ProductUse": {
+                "Percentage": 6,
+                "Emissions": 10.56
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.76
+            }
+        },
+        "date": "October 2018",
+        "models": []
+    },
+    "MacBookPro15,2": {
+        "Device": "13-inch MacBook Pro with Thunderbolt 3 (July 2018)",
+        "TotalEmissions": 229,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 169.46
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 13.74
+            },
+            "ProductUse": {
+                "Percentage": 19,
+                "Emissions": 43.51
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.29
+            }
+        },
+        "models": [
+            "MPXQ2",
+            "MPXR2",
+            "MPXT2",
+            "MPXU2",
+            "MR9Q2",
+            "MR9U2",
+            "MR9R2",
+            "MR9V2"
+        ],
+        "date": "July 2018"
+    },
+    "MacBookPro16,2": {
+        "Device": "13-inch MacBook Pro (May 2020)",
+        "TotalEmissions": 217,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 76,
+                "Emissions": 164.92
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 13.02
+            },
+            "ProductUse": {
+                "Percentage": 17,
+                "Emissions": 36.89
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.17
+            }
+        },
+        "date": "May 2020",
+        "models": []
+    },
+    "MacBookPro17,1": {
+        "Device": "13-inch MacBook Pro (November 2020)",
+        "TotalEmissions": 185,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 73,
+                "Emissions": 135.05
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 12.95
+            },
+            "ProductUse": {
+                "Percentage": 19,
+                "Emissions": 35.15
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.85
+            }
+        },
+        "date": "November 2020",
+        "models": []
+    },
+    "MacBookPro14,2": {
+        "Device": "13-inch MacBook Pro with Thunderbolt 3 (June 2017)",
+        "TotalEmissions": 302,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 79,
+                "Emissions": 238.58
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 12.08
+            },
+            "ProductUse": {
+                "Percentage": 16,
+                "Emissions": 48.32
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.02
+            }
+        },
+        "models": [
+            "MPXQ2",
+            "MPXR2",
+            "MPXT2",
+            "MPXU2",
+            "MPXV2",
+            "MPXW2",
+            "MPXX2",
+            "MPXY2"
+        ],
+        "date": "June 2017"
+    },
+    "MacBookAir6,2": {
+        "Device": "13-inch MacBook Air (June 2013)",
+        "TotalEmissions": 360,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 76,
+                "Emissions": 273.6
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 21.6
+            },
+            "ProductUse": {
+                "Percentage": 17,
+                "Emissions": 61.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.6
+            }
+        },
+        "models": [
+            "MD760",
+            "MD761"
+        ],
+        "date": "June 2013"
+    },
+    "MacBookAir5,2": {
+        "Device": "13-inch MacBook Air (June 2012)",
+        "TotalEmissions": 340,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 65,
+                "Emissions": 221.0
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 23.8
+            },
+            "ProductUse": {
+                "Percentage": 26,
+                "Emissions": 88.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 6.8
+            }
+        },
+        "models": [
+            "MD231",
+            "MD232"
+        ],
+        "date": "June 2012"
+    },
+    "MacBookAir7,2": {
+        "Device": "13-inch MacBook Air (March 2015)",
+        "TotalEmissions": 480,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 83,
+                "Emissions": 398.4
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 19.2
+            },
+            "ProductUse": {
+                "Percentage": 12,
+                "Emissions": 57.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.8
+            }
+        },
+        "models": [
+            "MJEV2",
+            "MJVG2"
+        ],
+        "date": "March 2015"
+    },
+    "MacBookAir3,2": {
+        "Device": "13-inch MacBook Air (October 2010)",
+        "TotalEmissions": 330,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 60,
+                "Emissions": 198.0
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 23.1
+            },
+            "ProductUse": {
+                "Percentage": 32,
+                "Emissions": 105.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.3
+            }
+        },
+        "models": [
+            "MC503",
+            "MC504"
+        ],
+        "date": "October 2010"
+    },
+    "MacBookPro10,2": {
+        "Device": "13-inch MacBook Pro with Retina (October 2012)",
+        "TotalEmissions": 540,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 70,
+                "Emissions": 378.0
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 27.0
+            },
+            "ProductUse": {
+                "Percentage": 23,
+                "Emissions": 124.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 10.8
+            }
+        },
+        "models": [
+            "MD212",
+            "MD213"
+        ],
+        "date": "October 2012"
+    },
+    "MacBookPro11,1": {
+        "Device": "13-inch MacBook Pro with Retina (July 2014)",
+        "TotalEmissions": 710,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 84,
+                "Emissions": 596.4
+            },
+            "Transportation": {
+                "Percentage": 3,
+                "Emissions": 21.3
+            },
+            "ProductUse": {
+                "Percentage": 12,
+                "Emissions": 85.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 7.1
+            }
+        },
+        "models": [
+            "MGX72",
+            "MGX82",
+            "MGX92"
+        ],
+        "date": "July 2014"
+    },
+    "MacBookPro9,2": {
+        "Device": "13-inch MacBook Pro (June 2012)",
+        "TotalEmissions": 580,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 75,
+                "Emissions": 435.0
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 23.2
+            },
+            "ProductUse": {
+                "Percentage": 20,
+                "Emissions": 116.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 5.8
+            }
+        },
+        "models": [
+            "MD101",
+            "MD102"
+        ],
+        "date": "June 2012"
+    },
+    "MacBookPro12,1": {
+        "Device": "13-inch MacBook Pro with Retina (March 2015)",
+        "TotalEmissions": 710,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 84,
+                "Emissions": 596.4
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 28.4
+            },
+            "ProductUse": {
+                "Percentage": 11,
+                "Emissions": 78.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 7.1
+            }
+        },
+        "models": [
+            "MF839",
+            "MF840",
+            "MF841"
+        ],
+        "date": "March 2015"
+    },
+    "MacBookPro13,1": {
+        "Device": "13-inch MacBook Pro with Thunderbolt 3 (October 2016)",
+        "TotalEmissions": 321,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 81,
+                "Emissions": 260.01
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 12.84
+            },
+            "ProductUse": {
+                "Percentage": 14,
+                "Emissions": 44.94
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.21
+            }
+        },
+        "models": [
+            "MLVP2",
+            "MLH12",
+            "MNQG2",
+            "MNQF2",
+            "MLUQ2",
+            "MLL42"
+        ],
+        "date": "October 2016"
+    },
+    "MacBookPro13,2": {
+        "Device": "13-inch MacBook Pro with Thunderbolt 3 (October 2016)",
+        "TotalEmissions": 321,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 81,
+                "Emissions": 260.01
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 12.84
+            },
+            "ProductUse": {
+                "Percentage": 14,
+                "Emissions": 44.94
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.21
+            }
+        },
+        "models": [
+            "MLVP2",
+            "MLH12",
+            "MNQG2",
+            "MNQF2",
+            "MLUQ2",
+            "MLL42"
+        ],
+        "date": "October 2016"
+    },
+    "MacBookPro14,5": {
+        "Device": "14-inch MacBook Pro (January 2023)",
+        "TotalEmissions": 243,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 79,
+                "Emissions": 191.97
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 2.43
+            },
+            "ProductUse": {
+                "Percentage": 20,
+                "Emissions": 48.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.43
+            }
+        },
+        "date": "January 2023",
+        "models": []
+    },
+    "MacBookPro15,7": {
+        "Device": "14-inch MacBook Pro (October 2023)",
+        "TotalEmissions": 296,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 73,
+                "Emissions": 216.08
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 14.8
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 65.12
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.96
+            }
+        },
+        "date": "October 2023",
+        "models": []
+    },
+    "MacBookPro15,1": {
+        "Device": "15-inch MacBook Pro with Thunderbolt 3 (July 2018)",
+        "TotalEmissions": 366,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 72,
+                "Emissions": 263.52
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 18.3
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 80.52
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.66
+            }
+        },
+        "models": [
+            "MR932",
+            "MR942",
+            "MR962",
+            "MR972"
+        ],
+        "date": "July 2018"
+    },
+    "MacBookPro14,3": {
+        "Device": "15-inch MacBook Pro with Thunderbolt 3 (June 2017)",
+        "TotalEmissions": 449,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 77,
+                "Emissions": 345.73
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 17.96
+            },
+            "ProductUse": {
+                "Percentage": 18,
+                "Emissions": 80.82
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.49
+            }
+        },
+        "models": [
+            "MPTR2",
+            "MPTT2",
+            "MPTU2",
+            "MPTV2"
+        ],
+        "date": "June 2017"
+    },
+    "MacBookPro9,1": {
+        "Device": "15-inch MacBook Pro (June 2012)",
+        "TotalEmissions": 690,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 76,
+                "Emissions": 524.4
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 34.5
+            },
+            "ProductUse": {
+                "Percentage": 18,
+                "Emissions": 124.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 6.9
+            }
+        },
+        "models": [
+            "MD103",
+            "MD104"
+        ],
+        "date": "June 2012"
+    },
+    "MacBookPro10,1": {
+        "Device": "15-inch MacBook Pro with Retina Display (June 2012)",
+        "TotalEmissions": 710,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 73,
+                "Emissions": 518.3
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 35.5
+            },
+            "ProductUse": {
+                "Percentage": 21,
+                "Emissions": 149.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 7.1
+            }
+        },
+        "models": [
+            "MC975",
+            "MC976"
+        ],
+        "date": "June 2012"
+    },
+    "MacBookPro11,4": {
+        "Device": "15-inch MacBook Pro with Retina (May 2015)",
+        "TotalEmissions": 870,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 81,
+                "Emissions": 704.7
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 34.8
+            },
+            "ProductUse": {
+                "Percentage": 14,
+                "Emissions": 121.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 8.7
+            }
+        },
+        "models": [
+            "MJLQ2",
+            "MJLT2"
+        ],
+        "date": "May 2015"
+    },
+    "MacBookPro11,5": {
+        "Device": "15-inch MacBook Pro with Retina (May 2016)",
+        "TotalEmissions": 592,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 79,
+                "Emissions": 467.68
+            },
+            "Transportation": {
+                "Percentage": 3,
+                "Emissions": 17.76
+            },
+            "ProductUse": {
+                "Percentage": 17,
+                "Emissions": 100.64
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 5.92
+            }
+        },
+        "date": "May 2016",
+        "models": []
+    },
+    "MacBookPro13,3": {
+        "Device": "15-inch MacBook Pro with Thunderbolt 3 (October 2016)",
+        "TotalEmissions": 461,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 76,
+                "Emissions": 350.36
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 18.44
+            },
+            "ProductUse": {
+                "Percentage": 19,
+                "Emissions": 87.59
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.61
+            }
+        },
+        "models": [
+            "MLH32",
+            "MLH42",
+            "MLW72",
+            "MLW82"
+        ],
+        "date": "October 2016"
+    },
+    "Mac14,6": {
+        "Device": "16-inch MacBook Pro (January 2023)",
+        "TotalEmissions": 300,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 222.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 3.0
+            },
+            "ProductUse": {
+                "Percentage": 25,
+                "Emissions": 75.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.0
+            }
+        },
+        "date": "January 2023",
+        "models": []
+    },
+    "Mac14,10": {
+        "Device": "16-inch MacBook Pro (January 2023)",
+        "TotalEmissions": 300,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 222.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 3.0
+            },
+            "ProductUse": {
+                "Percentage": 25,
+                "Emissions": 75.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.0
+            }
+        },
+        "date": "January 2023",
+        "models": []
+    },
+    "MacBookPro18,1": {
+        "Device": "16-inch MacBook Pro (October 2021)",
+        "TotalEmissions": 349,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 66,
+                "Emissions": 230.34
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 20.94
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 94.23
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.49
+            }
+        },
+        "date": "October 2021",
+        "models": []
+    },
+    "MacBookPro18,2": {
+        "Device": "16-inch MacBook Pro (October 2021)",
+        "TotalEmissions": 349,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 66,
+                "Emissions": 230.34
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 20.94
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 94.23
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.49
+            }
+        },
+        "date": "October 2021",
+        "models": []
+    },
+    "Mac15,7": {
+        "Device": "16-inch MacBook Pro (October 2023)",
+        "TotalEmissions": 348,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 72,
+                "Emissions": 250.56
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 20.88
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 76.56
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.48
+            }
+        },
+        "date": "October 2023",
+        "models": []
+    },
+    "Mac15,9": {
+        "Device": "16-inch MacBook Pro (October 2023)",
+        "TotalEmissions": 348,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 72,
+                "Emissions": 250.56
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 20.88
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 76.56
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.48
+            }
+        },
+        "date": "October 2023",
+        "models": []
+    },
+    "Mac15,11": {
+        "Device": "16-inch MacBook Pro (October 2023)",
+        "TotalEmissions": 348,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 72,
+                "Emissions": 250.56
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 20.88
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 76.56
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.48
+            }
+        },
+        "date": "October 2023",
+        "models": []
+    },
+    "MacBookPro16,1": {
+        "Device": "16-inch MacBook Pro (November 2019)",
+        "TotalEmissions": 394,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 75,
+                "Emissions": 295.5
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 19.7
+            },
+            "ProductUse": {
+                "Percentage": 19,
+                "Emissions": 74.86
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.94
+            }
+        },
+        "date": "November 2019",
+        "models": []
+    },
+    "iMac14,4": {
+        "Device": "21.5-inch iMac (June 2014)",
+        "TotalEmissions": 600,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 57,
+                "Emissions": 342.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 6.0
+            },
+            "ProductUse": {
+                "Percentage": 39,
+                "Emissions": 234.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 18.0
+            }
+        },
+        "models": [
+            "ME086",
+            "ME087",
+            "MF883"
+        ],
+        "date": "June 2014"
+    },
+    "iMac16,2": {
+        "Device": "21.5-inch iMac (October 2015)",
+        "TotalEmissions": 630,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 346.5
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 37.8
+            },
+            "ProductUse": {
+                "Percentage": 36,
+                "Emissions": 226.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 18.9
+            }
+        },
+        "models": [
+            "MK142",
+            "MK442",
+            "MK452"
+        ],
+        "date": "October 2015"
+    },
+    "iMac14,1, iMac14,3": {
+        "Device": "21.5-inch iMac (September 2013)",
+        "TotalEmissions": 610,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 335.5
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 6.1
+            },
+            "ProductUse": {
+                "Percentage": 41,
+                "Emissions": 250.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 18.3
+            }
+        },
+        "models": [
+            "ME086",
+            "ME087"
+        ],
+        "date": "September 2013"
+    },
+    "iMac18,1": {
+        "Device": "21.5-inch iMac (June 2017)",
+        "TotalEmissions": 494,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 49,
+                "Emissions": 242.06
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 34.58
+            },
+            "ProductUse": {
+                "Percentage": 42,
+                "Emissions": 207.48
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 9.88
+            }
+        },
+        "models": [
+            "MMQA2"
+        ],
+        "date": "June 2017"
+    },
+    "iMac19,2": {
+        "Device": "21.5-inch iMac with Retina 4K Display (March 2019)",
+        "TotalEmissions": 596,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 43,
+                "Emissions": 256.28
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 29.8
+            },
+            "ProductUse": {
+                "Percentage": 51,
+                "Emissions": 303.96
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 5.96
+            }
+        },
+        "date": "March 2019",
+        "models": []
+    },
+    "iMac11,2": {
+        "Device": "21.5-inch iMac (July 2010)",
+        "TotalEmissions": 1240,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 39,
+                "Emissions": 483.6
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 86.8
+            },
+            "ProductUse": {
+                "Percentage": 53,
+                "Emissions": 657.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 12.4
+            }
+        },
+        "models": [
+            "MC508",
+            "MC509"
+        ],
+        "date": "July 2010"
+    },
+    "iMac21,1": {
+        "Device": "24-inch iMac (April 2021)",
+        "TotalEmissions": 481,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 45,
+                "Emissions": 216.45
+            },
+            "Transportation": {
+                "Percentage": 10,
+                "Emissions": 48.1
+            },
+            "ProductUse": {
+                "Percentage": 44,
+                "Emissions": 211.64
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.81
+            }
+        },
+        "date": "April 2021",
+        "models": []
+    },
+    "iMac21,2": {
+        "Device": "24-inch iMac (April 2021)",
+        "TotalEmissions": 481,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 45,
+                "Emissions": 216.45
+            },
+            "Transportation": {
+                "Percentage": 10,
+                "Emissions": 48.1
+            },
+            "ProductUse": {
+                "Percentage": 44,
+                "Emissions": 211.64
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.81
+            }
+        },
+        "date": "April 2021",
+        "models": []
+    },
+    "iMac20,1": {
+        "Device": "27-inch iMac with Retina 5K Display (August 2020)",
+        "TotalEmissions": 824,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 46,
+                "Emissions": 379.04
+            },
+            "Transportation": {
+                "Percentage": 8,
+                "Emissions": 65.92
+            },
+            "ProductUse": {
+                "Percentage": 45,
+                "Emissions": 370.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 8.24
+            }
+        },
+        "date": "August 2020",
+        "models": []
+    },
+    "iMac20,2": {
+        "Device": "27-inch iMac with Retina 5K Display (August 2020)",
+        "TotalEmissions": 824,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 46,
+                "Emissions": 379.04
+            },
+            "Transportation": {
+                "Percentage": 8,
+                "Emissions": 65.92
+            },
+            "ProductUse": {
+                "Percentage": 45,
+                "Emissions": 370.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 8.24
+            }
+        },
+        "date": "August 2020",
+        "models": []
+    },
+    "iMac18,3": {
+        "Device": "27-inch iMac with Retina 5K Display (June 2017)",
+        "TotalEmissions": 1005,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 38,
+                "Emissions": 381.9
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 40.2
+            },
+            "ProductUse": {
+                "Percentage": 57,
+                "Emissions": 572.85
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 10.05
+            }
+        },
+        "models": [
+            "MNE92",
+            "MNEA2",
+            "MNED2"
+        ],
+        "date": "June 2017"
+    },
+    "iMac19,1": {
+        "Device": "27-inch iMac with Retina 5K Display (March 2019)",
+        "TotalEmissions": 1008,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 39,
+                "Emissions": 393.12
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 50.4
+            },
+            "ProductUse": {
+                "Percentage": 55,
+                "Emissions": 554.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 10.08
+            }
+        },
+        "date": "March 2019",
+        "models": []
+    },
+    "iMac11,3": {
+        "Device": "27-inch iMac (July 2010)",
+        "TotalEmissions": 1940,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 37,
+                "Emissions": 717.8
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 116.4
+            },
+            "ProductUse": {
+                "Percentage": 56,
+                "Emissions": 1086.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 19.4
+            }
+        },
+        "models": [
+            "MC510",
+            "MC511"
+        ],
+        "date": "July 2010"
+    },
+    "iMac14,2": {
+        "Device": "27-inch iMac (September 2013)",
+        "TotalEmissions": 1000,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 46,
+                "Emissions": 460.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 10.0
+            },
+            "ProductUse": {
+                "Percentage": 50,
+                "Emissions": 500.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 30.0
+            }
+        },
+        "models": [
+            "ME088",
+            "ME089"
+        ],
+        "date": "September 2013"
+    },
+    "iMac17,1": {
+        "Device": "27-inch iMac with Retina 5K Display (October 2015)",
+        "TotalEmissions": 1010,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 49,
+                "Emissions": 494.9
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 70.7
+            },
+            "ProductUse": {
+                "Percentage": 41,
+                "Emissions": 414.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 30.3
+            }
+        },
+        "models": [
+            "MK462",
+            "MK472",
+            "MK482"
+        ],
+        "date": "October 2015"
+    },
+    "iMac13,1": {
+        "Device": "21.5-inch iMac (October 2012)",
+        "TotalEmissions": 640,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 52,
+                "Emissions": 332.8
+            },
+            "Transportation": {
+                "Percentage": 2,
+                "Emissions": 12.8
+            },
+            "ProductUse": {
+                "Percentage": 43,
+                "Emissions": 275.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 3,
+                "Emissions": 19.2
+            }
+        },
+        "models": [
+            "MD093",
+            "MD094"
+        ],
+        "date": "October 2012"
+    },
+    "iMac12,1": {
+        "Device": "21.5-inch iMac (May 2011)",
+        "TotalEmissions": 970,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 36,
+                "Emissions": 349.2
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 48.5
+            },
+            "ProductUse": {
+                "Percentage": 58,
+                "Emissions": 562.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 9.7
+            }
+        },
+        "models": [
+            "MC309",
+            "MC812"
+        ],
+        "date": "May 2011"
+    },
+    "iMac13,2": {
+        "Device": "27-inch iMac (October 2012)",
+        "TotalEmissions": 1010,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 45,
+                "Emissions": 454.5
+            },
+            "Transportation": {
+                "Percentage": 3,
+                "Emissions": 30.3
+            },
+            "ProductUse": {
+                "Percentage": 50,
+                "Emissions": 505.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 20.2
+            }
+        },
+        "models": [
+            "MD095",
+            "MD096"
+        ],
+        "date": "October 2012"
+    },
+    "iMac12,2": {
+        "Device": "27-inch iMac (May 2011)",
+        "TotalEmissions": 1470,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 31,
+                "Emissions": 455.7
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 88.2
+            },
+            "ProductUse": {
+                "Percentage": 62,
+                "Emissions": 911.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 14.7
+            }
+        },
+        "models": [
+            "MC813",
+            "MC814"
+        ],
+        "date": "May 2011"
+    },
+    "iMac21,3": {
+        "Device": "iMac (October 2023)",
+        "TotalEmissions": 389,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 52,
+                "Emissions": 202.28
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 19.45
+            },
+            "ProductUse": {
+                "Percentage": 43,
+                "Emissions": 167.27
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.89
+            }
+        },
+        "models": [
+            ""
+        ],
+        "date": "October 2023"
+    },
+    "iMac22,1": {
+        "Device": "iMac (October 2024)",
+        "TotalEmissions": 346,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 50,
+                "Emissions": 173.0
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 17.3
+            },
+            "ProductUse": {
+                "Percentage": 45,
+                "Emissions": 155.7
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.46
+            }
+        },
+        "models": [
+            ""
+        ],
+        "date": "October 2024"
+    },
+    "iMacPro1,1": {
+        "Device": "iMac Pro (December 2017)",
+        "TotalEmissions": 1468,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 41,
+                "Emissions": 601.88
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 58.72
+            },
+            "ProductUse": {
+                "Percentage": 54,
+                "Emissions": 792.72
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 14.68
+            }
+        },
+        "models": [
+            "MQ2Y2"
+        ],
+        "date": "December 2017"
+    },
+    "Mac14,2": {
+        "Device": "MacBook Air with M2 chip (June 2022)",
+        "TotalEmissions": 147,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 101.43
+            },
+            "Transportation": {
+                "Percentage": 8,
+                "Emissions": 11.76
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 32.34
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.47
+            }
+        },
+        "models": [
+            "MLY33"
+        ],
+        "date": "June 2022"
+    },
+    "Mac15,1": {
+        "Device": "MacBook Air with M3 chip (March 2024)",
+        "TotalEmissions": 158,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 109.02
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 6.32
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 42.66
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.58
+            }
+        },
+        "models": [],
+        "date": "March 2024"
+    },
+    "Mac15,12": {
+        "Device": "MacBook Air with M3 chip (March 2024)",
+        "TotalEmissions": 158,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 109.02
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 6.32
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 42.66
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.58
+            }
+        },
+        "models": [],
+        "date": "March 2024"
+    },
+    "Mac15,13": {
+        "Device": "MacBook Air with M3 chip (March 2024)",
+        "TotalEmissions": 158,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 109.02
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 6.32
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 42.66
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.58
+            }
+        },
+        "models": [],
+        "date": "March 2024"
+    },
+    "Mac14,3": {
+        "Device": "Mac mini (January 2023)",
+        "TotalEmissions": 112,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 63,
+                "Emissions": 70.56
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 1.12
+            },
+            "ProductUse": {
+                "Percentage": 36,
+                "Emissions": 40.32
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.12
+            }
+        },
+        "models": [],
+        "date": "January 2023"
+    },
+    "Mac14,12": {
+        "Device": "Mac mini (January 2023)",
+        "TotalEmissions": 112,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 63,
+                "Emissions": 70.56
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 1.12
+            },
+            "ProductUse": {
+                "Percentage": 36,
+                "Emissions": 40.32
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.12
+            }
+        },
+        "models": [],
+        "date": "January 2023"
+    },
+    "Mac15,3": {
+        "Device": "Mac mini (October 2024)",
+        "TotalEmissions": 121,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 87,
+                "Emissions": 105.27
+            },
+            "Transportation": {
+                "Percentage": 3,
+                "Emissions": 3.63
+            },
+            "ProductUse": {
+                "Percentage": 9,
+                "Emissions": 10.89
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.21
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "MacPro7,1": {
+        "Device": "Mac Pro (December 2019)",
+        "TotalEmissions": 2765,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 26,
+                "Emissions": 718.9
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 165.9
+            },
+            "ProductUse": {
+                "Percentage": 67,
+                "Emissions": 1852.55
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 27.65
+            }
+        },
+        "models": [],
+        "date": "December 2019"
+    },
+    "Mac14,8": {
+        "Device": "Mac Pro (June 2023)",
+        "TotalEmissions": 1572,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 38,
+                "Emissions": 597.36
+            },
+            "Transportation": {
+                "Percentage": 5,
+                "Emissions": 78.6
+            },
+            "ProductUse": {
+                "Percentage": 56,
+                "Emissions": 880.32
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 15.72
+            }
+        },
+        "models": [],
+        "date": "June 2023"
+    },
+    "Mac14,13": {
+        "Device": "Mac Studio (June 2023)",
+        "TotalEmissions": 290,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 50,
+                "Emissions": 145.0
+            },
+            "Transportation": {
+                "Percentage": 11,
+                "Emissions": 31.9
+            },
+            "ProductUse": {
+                "Percentage": 39,
+                "Emissions": 113.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.9
+            }
+        },
+        "models": [],
+        "date": "June 2023"
+    },
+    "Mac14,14": {
+        "Device": "Mac Studio (June 2023)",
+        "TotalEmissions": 290,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 50,
+                "Emissions": 145.0
+            },
+            "Transportation": {
+                "Percentage": 11,
+                "Emissions": 31.9
+            },
+            "ProductUse": {
+                "Percentage": 39,
+                "Emissions": 113.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.9
+            }
+        },
+        "models": [],
+        "date": "June 2023"
+    },
+    "Mac13,1": {
+        "Device": "Mac Studio (March 2022)",
+        "TotalEmissions": 262,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 63,
+                "Emissions": 165.06
+            },
+            "Transportation": {
+                "Percentage": 2,
+                "Emissions": 5.24
+            },
+            "ProductUse": {
+                "Percentage": 34,
+                "Emissions": 89.08
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.62
+            }
+        },
+        "models": [],
+        "date": "March 2022"
+    },
+    "Mac13,2": {
+        "Device": "Mac Studio (March 2022)",
+        "TotalEmissions": 262,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 63,
+                "Emissions": 165.06
+            },
+            "Transportation": {
+                "Percentage": 2,
+                "Emissions": 5.24
+            },
+            "ProductUse": {
+                "Percentage": 34,
+                "Emissions": 89.08
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.62
+            }
+        },
+        "models": [],
+        "date": "March 2022"
+    },
+    "MacPro4,1": {
+        "Device": "Mac Pro (March 2009)",
+        "TotalEmissions": 2110,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 37,
+                "Emissions": 780.7
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 84.4
+            },
+            "ProductUse": {
+                "Percentage": 59,
+                "Emissions": 1244.9
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 21.1
+            }
+        },
+        "models": [
+            "MB535",
+            "MB871"
+        ],
+        "date": "March 2009"
+    },
+    "Mac14,15": {
+        "Device": "MacBook Air 15-inch with M2 chip (June 2023)",
+        "TotalEmissions": 152,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 73,
+                "Emissions": 110.96
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 6.08
+            },
+            "ProductUse": {
+                "Percentage": 22,
+                "Emissions": 33.44
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.52
+            }
+        },
+        "models": [],
+        "date": "June 2023"
+    },
+    "MacBook9,1": {
+        "Device": "12-inch MacBook (April 2016)",
+        "TotalEmissions": 430,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 89,
+                "Emissions": 382.7
+            },
+            "Transportation": {
+                "Percentage": 2,
+                "Emissions": 8.6
+            },
+            "ProductUse": {
+                "Percentage": 8,
+                "Emissions": 34.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 4.3
+            }
+        },
+        "models": [
+            "MLH72",
+            "MLHA2",
+            "MLHE2",
+            "MMGL2",
+            "MLH82",
+            "MLHC2",
+            "MLHF2",
+            "MMGM2"
+        ],
+        "date": "April 2016"
+    },
+    "Mac16,1": {
+        "Device": "MacBook Pro 14-inch (October 2024)",
+        "TotalEmissions": 218,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 161.32
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 13.08
+            },
+            "ProductUse": {
+                "Percentage": 20,
+                "Emissions": 43.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.18
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "Mac16,6": {
+        "Device": "MacBook Pro 14-inch (October 2024)",
+        "TotalEmissions": 218,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 161.32
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 13.08
+            },
+            "ProductUse": {
+                "Percentage": 20,
+                "Emissions": 43.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.18
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "Mac16,8": {
+        "Device": "MacBook Pro 14-inch (October 2024)",
+        "TotalEmissions": 218,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 74,
+                "Emissions": 161.32
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 13.08
+            },
+            "ProductUse": {
+                "Percentage": 20,
+                "Emissions": 43.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.18
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "Mac16,5": {
+        "Device": "MacBook Pro 16-inch (October 2024)",
+        "TotalEmissions": 279,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 192.51
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 16.74
+            },
+            "ProductUse": {
+                "Percentage": 25,
+                "Emissions": 69.75
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.79
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "Mac16,7": {
+        "Device": "MacBook Pro 16-inch (October 2024)",
+        "TotalEmissions": 279,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 69,
+                "Emissions": 192.51
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 16.74
+            },
+            "ProductUse": {
+                "Percentage": 25,
+                "Emissions": 69.75
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.79
+            }
+        },
+        "models": [],
+        "date": "October 2024"
+    },
+    "MacBookPro8,1": {
+        "Device": "13-inch MacBook Pro (October 2011)",
+        "TotalEmissions": 360,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 198.0
+            },
+            "Transportation": {
+                "Percentage": 10,
+                "Emissions": 36.0
+            },
+            "ProductUse": {
+                "Percentage": 33,
+                "Emissions": 118.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 7.2
+            }
+        },
+        "models": [
+            "MD313",
+            "MD314"
+        ],
+        "date": "October 2011"
+    },
+    "MacBookPro8,2": {
+        "Device": "15-inch MacBook Pro (October 2011)",
+        "TotalEmissions": 460,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 62,
+                "Emissions": 285.2
+            },
+            "Transportation": {
+                "Percentage": 9,
+                "Emissions": 41.4
+            },
+            "ProductUse": {
+                "Percentage": 27,
+                "Emissions": 124.2
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 9.2
+            }
+        },
+        "models": [
+            "MD318",
+            "MD322"
+        ],
+        "date": "October 2011"
+    },
+    "MacBookPro8,3": {
+        "Device": "17-inch MacBook Pro (October 2011)",
+        "TotalEmissions": 550,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 61,
+                "Emissions": 335.5
+            },
+            "Transportation": {
+                "Percentage": 9,
+                "Emissions": 49.5
+            },
+            "ProductUse": {
+                "Percentage": 28,
+                "Emissions": 154.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 2,
+                "Emissions": 11.0
+            }
+        },
+        "models": [
+            "MD311"
+        ],
+        "date": "October 2011"
+    },
+    "MacBook6,1": {
+        "Device": "MacBook (October 2009)",
+        "TotalEmissions": 350,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 53,
+                "Emissions": 185.5
+            },
+            "Transportation": {
+                "Percentage": 9,
+                "Emissions": 31.5
+            },
+            "ProductUse": {
+                "Percentage": 37,
+                "Emissions": 129.5
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.5
+            }
+        },
+        "models": [
+            "MC207"
+        ],
+        "date": "October 2009"
+    },
+    "MacBookAir4,1": {
+        "Device": "11-inch MacBook Air (July 2011)",
+        "TotalEmissions": 270,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 60,
+                "Emissions": 162.0
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 16.2
+            },
+            "ProductUse": {
+                "Percentage": 33,
+                "Emissions": 89.1
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.7
+            }
+        },
+        "models": [
+            "MC968",
+            "MC969"
+        ],
+        "date": "July 2011"
+    },
+    "MacBookAir4,2": {
+        "Device": "13-inch MacBook Air (July 2011)",
+        "TotalEmissions": 320,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 62,
+                "Emissions": 198.4
+            },
+            "Transportation": {
+                "Percentage": 7,
+                "Emissions": 22.4
+            },
+            "ProductUse": {
+                "Percentage": 30,
+                "Emissions": 96.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 3.2
+            }
+        },
+        "models": [
+            "MC965",
+            "MC966"
+        ],
+        "date": "July 2011"
+    },
+    "Macmini5,3": {
+        "Device": "Mac mini (July 2011)",
+        "TotalEmissions": 280,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 154.0
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 11.2
+            },
+            "ProductUse": {
+                "Percentage": 40,
+                "Emissions": 112.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.8
+            }
+        },
+        "models": [
+            "MC815",
+            "MC816"
+        ],
+        "date": "July 2011"
+    },
+    "Macmini6,1": {
+        "Device": "Mac mini (October 2012)",
+        "TotalEmissions": 290,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 67,
+                "Emissions": 194.3
+            },
+            "Transportation": {
+                "Percentage": 2,
+                "Emissions": 5.8
+            },
+            "ProductUse": {
+                "Percentage": 30,
+                "Emissions": 87.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.9
+            }
+        },
+        "models": [
+            "MD387",
+            "MD388"
+        ],
+        "date": "October 2012"
+    },
+    "Macmini6,2": {
+        "Device": "Mac mini with OS X Server (October 2012)",
+        "TotalEmissions": 1020,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 20,
+                "Emissions": 204.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 10.2
+            },
+            "ProductUse": {
+                "Percentage": 78,
+                "Emissions": 795.6
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 10.2
+            }
+        },
+        "models": [
+            "MD389"
+        ],
+        "date": "October 2012"
+    },
+    "Macmini5,1": {
+        "Device": "Mac mini (July 2011)",
+        "TotalEmissions": 280,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 154.0
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 11.2
+            },
+            "ProductUse": {
+                "Percentage": 40,
+                "Emissions": 112.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.8
+            }
+        },
+        "models": [
+            "MC815",
+            "MC816"
+        ],
+        "date": "July 2011"
+    },
+    "Macmini5,2": {
+        "Device": "Mac mini (July 2011)",
+        "TotalEmissions": 280,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 55,
+                "Emissions": 154.0
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 11.2
+            },
+            "ProductUse": {
+                "Percentage": 40,
+                "Emissions": 112.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.8
+            }
+        },
+        "models": [
+            "MC815",
+            "MC816"
+        ],
+        "date": "July 2011"
+    },
+    "Macmini8,1": {
+        "Device": "Mac mini (Oktober 2018)",
+        "TotalEmissions": 270,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 51,
+                "Emissions": 137.7
+            },
+            "Transportation": {
+                "Percentage": 44,
+                "Emissions": 118.8
+            },
+            "ProductUse": {
+                "Percentage": 4,
+                "Emissions": 10.8
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 2.7
+            }
+        },
+        "models": [],
+        "date": "Oktober 2018"
+    },
+    "Macmini9,1": {
+        "Device": "Mac mini (November 2020)",
+        "TotalEmissions": 172,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 54,
+                "Emissions": 92.88
+            },
+            "Transportation": {
+                "Percentage": 6,
+                "Emissions": 10.32
+            },
+            "ProductUse": {
+                "Percentage": 39,
+                "Emissions": 67.08
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 1.72
+            }
+        },
+        "models": [],
+        "date": "November 2020"
+    },
+    "Macmini7,1": {
+        "Device": "Mac mini (October 2014)",
+        "TotalEmissions": 530,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 90,
+                "Emissions": 477.0
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 5.3
+            },
+            "ProductUse": {
+                "Percentage": 8,
+                "Emissions": 42.4
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 5.3
+            }
+        },
+        "models": [
+            "MGEM2",
+            "MGEN2",
+            "MGEQ2"
+        ],
+        "date": "October 2014"
+    },
+    "Macmini4,1": {
+        "Device": "Mac mini with Snow Leopard Server (June 2010)",
+        "TotalEmissions": 710,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 21,
+                "Emissions": 149.1
+            },
+            "Transportation": {
+                "Percentage": 1,
+                "Emissions": 7.1
+            },
+            "ProductUse": {
+                "Percentage": 77,
+                "Emissions": 546.7
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 7.1
+            }
+        },
+        "models": [
+            "MC438"
+        ],
+        "date": "June 2010"
+    },
+    "MacPro6,1": {
+        "Device": "Mac Pro (Ocotober 2013)",
+        "TotalEmissions": 1000,
+        "EmissionsBreakdown": {
+            "Production": {
+                "Percentage": 45,
+                "Emissions": 450.0
+            },
+            "Transportation": {
+                "Percentage": 4,
+                "Emissions": 40.0
+            },
+            "ProductUse": {
+                "Percentage": 50,
+                "Emissions": 500.0
+            },
+            "EndOfLifeProcessing": {
+                "Percentage": 1,
+                "Emissions": 10.0
+            }
+        },
+        "models": [
+            "MD878",
+            "MQGG2"
+        ],
+        "date": "Ocotober 2013"
+    }
+}

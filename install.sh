@@ -69,17 +69,6 @@ chmod +x "$HOG_PATH"/power_logger.py
 # Writing the config file
 ###
 
-update_config() {
-    local key="$1"
-    local value="$2"
-    local file="$3"
-    if grep -q "^${key} =" "$file"; then
-        sed -i '' "s|^${key} =.*|${key} = ${value}|" "$file"
-    else
-        echo "${key} = ${value}" >> "$file"
-    fi
-}
-
 cat "$HOG_PATH/settings.ini" > "$CONFIG_FILE"
 
 if [[ -t 0 ]]; then
@@ -96,8 +85,7 @@ else
     sed -i '' "s|^upload_data =.*|upload_data = false|" "$CONFIG_FILE"
 fi
 
-
-echo "Installation complete. Configuration updated at $CONFIG_FILE."
+echo "Installation complete. Configuration updated at $CONFIG_FILE. You might need to edit it manually."
 
 
 ###

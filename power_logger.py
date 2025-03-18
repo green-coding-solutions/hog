@@ -341,22 +341,27 @@ def get_grid_intensity():
     url = 'https://api.electricitymap.org/v3/carbon-intensity/latest'
     headers = {'auth-token': global_settings['electricitymaps_token']}
 
+    kill_timer = threading.Timer(60.0, kill_program)
+    kill_timer.start()
+
     try:
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=30) as response:
             response_data = json.loads(response.read().decode())
             get_grid_intensity_cache = {
                 'value': response_data['carbonIntensity'],
                 'timestamp': time.time()
             }
+            kill_timer.cancel()
     except (urllib.error.HTTPError,
             ConnectionRefusedError,
             urllib.error.URLError,
             http.client.RemoteDisconnected,
             ConnectionResetError) as exc:
         logging.error(f"Failed to fetch grid intensity: {exc}")
+        kill_timer.cancel()
     finally:
-        return get_grid_intensity_cache['value']  # Return last cached value on error
+        return get_grid_intensity_cache.get('value')  # Return None if no cache value exists
 
 def get_mac_model():
     try:
@@ -466,7 +471,7 @@ def parse_powermetrics_output(output: str):
             top_processes = find_top_processes(data['coalitions'], data['elapsed_ns'])
             for process in top_processes:
                 c.execute('INSERT INTO top_processes (time, name, energy_impact, cputime_per) VALUES (?, ?, ?, ?)',
-                    (data['timestamp'], process['name'], process['energy_impact'], process['energy_impact']))
+                    (data['timestamp'], process['name'], process['energy_impact'], process['cputime_ms']))
 
 
             # Create the new upload data structure
@@ -474,7 +479,6 @@ def parse_powermetrics_output(output: str):
                 'machine_uuid': machine_uuid,
                 'timestamp': data['timestamp'],
                 'top_processes': top_processes,
-                'timestamp': data['timestamp'],
                 'timezone': f"{time.tzname[0]}/{time.tzname[1]}",
                 'grid_intensity_cog': grid_intensity,
                 'combined_energy_mj': cpu_energy_data['combined_energy'],

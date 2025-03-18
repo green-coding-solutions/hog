@@ -2504,7 +2504,7 @@
         "date": "July 2011"
     },
     "Macmini8,1": {
-        "Device": "Mac mini (Oktober 2018)",
+        "Device": "Mac mini (October 2018)",
         "TotalEmissions": 270,
         "EmissionsBreakdown": {
             "Production": {
@@ -2525,7 +2525,7 @@
             }
         },
         "models": [],
-        "date": "Oktober 2018"
+        "date": "October 2018"
     },
     "Macmini9,1": {
         "Device": "Mac mini (November 2020)",
@@ -2606,7 +2606,7 @@
         "date": "June 2010"
     },
     "MacPro6,1": {
-        "Device": "Mac Pro (Ocotober 2013)",
+        "Device": "Mac Pro (October 2013)",
         "TotalEmissions": 1000,
         "EmissionsBreakdown": {
             "Production": {
@@ -2630,6 +2630,6 @@
             "MD878",
             "MQGG2"
         ],
-        "date": "Ocotober 2013"
+        "date": "October 2013"
     }
 }

@@ -75,8 +75,8 @@ global_settings = {}
 
 machine_uuid = None
 
-conn = sqlite3.connect(DATABASE_FILE)
-c = conn.cursor()
+conn = None
+c = None
 
 def kill_program():
     # We set the stop_signal for everything to shut down in an orderly fashion
@@ -334,6 +334,9 @@ def get_grid_intensity():
 
     if not global_settings.get('electricitymaps_token'):
         return None
+
+    if global_settings['electricitymaps_token'] == 'THIS_IS_A_TEST':
+        return 100
 
     if time.time() - get_grid_intensity_cache['timestamp'] < 900:
         return get_grid_intensity_cache['value']
@@ -715,33 +718,38 @@ def set_tick(local_stop_signal, stime):
         sleeper(local_stop_signal, 1)
 
 
-def get_settings(debug = False):
-    if debug:
-        return {
-            'powermetrics' : 1000,
-            'upload_delta': 5,
-            'api_url': 'http://api.green-coding.internal:9142/v2/hog/add',
-            'upload_data': True,
-            'resolve_coalitions': ['com.googlecode.iterm2', 'com.apple.terminal', 'com.vix.cron', 'org.alacritty'],
-            'resolve_process': ['python',],
-            'gmt_auth_token': 'DEFAULT',
-            'electricitymaps_token': None,
-            'daily_computer_usage_hours': 6,
-            'overall_usage_years':3,
-        }
-
-
-    default_settings = {
+def get_settings(debug = False, test=False):
+    base_settings = {
+        'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty',
+        'resolve_process': ['python'],
+        'daily_computer_usage_hours': 6,
+        'overall_usage_years': 3,
+        'upload_data': True,
+        'electricitymaps_token': None,
         'powermetrics': 5000,
         'upload_delta': 300,
+        'api_url': 'http://api.green-coding.internal:9142/v2/hog/add',
+        'gmt_auth_token': 'DEFAULT',
+    }
+
+    if test:
+        return {
+            **base_settings,
+            'upload_data': False,
+            'electricitymaps_token': 'THIS_IS_A_TEST',
+        }
+
+    if debug:
+        return {
+            **base_settings,
+            'powermetrics': 1000,
+            'upload_delta': 5,
+        }
+
+    default_settings = {
+        **base_settings,
         'api_url': 'https://api.green-coding.io/v2/hog/add',
-        'upload_data': True,
-        'resolve_coalitions': 'com.googlecode.iterm2,com.apple.Terminal,com.vix.cron,org.alacritty',
-        'resolve_process': ['python',],
         'gmt_auth_token': None,
-        'electricitymaps_token': None,
-        'daily_computer_usage_hours': 6,
-        'overall_usage_years':3,
     }
 
 
@@ -803,11 +811,18 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--file', type=str, help='Path to the input file')
     parser.add_argument('-v', '--log-level', choices=LOG_LEVELS, default='info', help='Logging level')
     parser.add_argument('-o', '--output-file', type=str, help='Path to the output log file.')
+    parser.add_argument('-t', '--test', action='store_true', help='If this is set the program will write to the test DB.')
 
     args = parser.parse_args()
 
     if args.dev:
         args.log_level = 'debug'
+
+    if args.test:
+        DATABASE_FILE = '/tmp/power_hog_test.db'
+
+    conn = sqlite3.connect(DATABASE_FILE)
+    c = conn.cursor()
 
     log_level = getattr(logging, args.log_level.upper())
 
@@ -819,7 +834,7 @@ if __name__ == '__main__':
     logging.debug('Program started.')
     logging.debug(f"Using db: {DATABASE_FILE}")
 
-    global_settings = get_settings(args.dev)
+    global_settings = get_settings(args.dev, args.test)
 
     if os.geteuid() != 0:
         logging.error('The script needs to be run as root!')

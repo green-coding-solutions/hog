@@ -173,6 +173,10 @@ It sometimes help to enable debugging for the logger process you can do this by 
 ```
 Please remember that the log file can become quite big. The hog does not use logrotate or similar out of the box.
 
+## Tests
+
+You can run some simple tests by running the `./run_test.sh` script the in the `test` folder. This is very basic!
+
 ## Screenshots
 
 <img src="Screenshot.png" width="300"/>

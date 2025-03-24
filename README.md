@@ -187,3 +187,4 @@ Please remember that the log file can become quite big. The hog does not use log
 - If you can't see the hog logo in the menu bar because of the notch there are multiple solutions.
   - you can use a tool like https://www.macbartender.com/Bartender4/
   - you can use the the command `$ sudo /usr/local/bin/hog/power_logger.py -w` to display the url.
+- We consider the readings we get from `powermetrics` to be energy and not power. As apple doesn't really give you any indication what the unit is we assume energy.

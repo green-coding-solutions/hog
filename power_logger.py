@@ -62,11 +62,13 @@ APP_SUPPORT_PATH.mkdir(parents=True, exist_ok=True)
 DATABASE_FILE = APP_SUPPORT_PATH / 'db.db'
 
 stats = {
-    'combined_energy': 0,
-    'cpu_energy': 0,
-    'gpu_energy': 0,
-    'ane_energy': 0,
+    'combined_energy_mj': 0,
+    'cpu_energy_mj': 0,
+    'gpu_energy_mj': 0,
+    'ane_energy_mj': 0,
     'energy_impact': 0,
+    'embodied_carbon_g': 0,
+    'operational_carbon_g': 0,
 }
 
 MIGRATIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
@@ -468,8 +470,6 @@ def parse_powermetrics_output(output: str):
                      cpu_energy_data['energy_impact'],
                      co2eq))
 
-            for key in stats:
-                stats[key] += cpu_energy_data[key]
 
             top_processes = find_top_processes(data['coalitions'], data['elapsed_ns'])
             for process in top_processes:
@@ -504,6 +504,11 @@ def parse_powermetrics_output(output: str):
 
             conn.commit()
             logging.debug('Data added to the DB')
+
+
+            for key in stats:
+                if upload_data[key]:
+                    stats[key] += upload_data[key]
 
 def save_settings():
     global machine_uuid

@@ -119,8 +119,8 @@ if decoded_data['grid_intensity_cog'] == 100 and \
     decoded_data['gpu_energy_mj'] == cpu_energy_data_first['gpu_energy'] and \
     decoded_data['ane_energy_mj'] == cpu_energy_data_first['ane_energy'] and \
     decoded_data['energy_impact'] == cpu_energy_data_first['energy_impact'] and \
-    decoded_data['co2eq_g'] >= 0 and decoded_data['co2eq_g'] <= 1 and \
-    decoded_data['embodied_emissions_g'] >= 0 and decoded_data['embodied_emissions_g'] <= 1:
+    decoded_data['operational_carbon_g'] >= 0 and decoded_data['operational_carbon_g'] <= 1 and \
+    decoded_data['embodied_carbon_g'] >= 0 and decoded_data['embodied_carbon_g'] <= 1:
     print("[PASS] Upload values match!")
 else:
     print("[ERROR] Upload values don't match!")

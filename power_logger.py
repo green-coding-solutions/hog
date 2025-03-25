@@ -489,11 +489,11 @@ def parse_powermetrics_output(output: str):
                 'gpu_energy_mj': cpu_energy_data['gpu_energy'],
                 'ane_energy_mj': cpu_energy_data['ane_energy'],
                 'energy_impact': cpu_energy_data['energy_impact'],
-                'co2eq_g': co2eq,
                 'hw_model': data['hw_model'],
                 'elapsed_ns': data['elapsed_ns'],
                 'thermal_pressure': data['thermal_pressure'],
-                'embodied_emissions_g': embodied_co2eq_g(round(data['elapsed_ns'] / 1_000_000_000)),
+                'embodied_carbon_g': embodied_co2eq_g(round(data['elapsed_ns'] / 1_000_000_000)),
+                'operational_carbon_g': co2eq,
             }
 
             compressed_data = zlib.compress(str(json.dumps(upload_data, cls=RemoveNaNEncoder)).encode())

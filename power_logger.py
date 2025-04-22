@@ -182,6 +182,7 @@ def run_powermetrics(local_stop_signal, filename: str = None):
                         if not local_stop_signal.is_set():
                             logging.error('The pipe to powermetrics has been closed. Exiting')
                             local_stop_signal.set()
+                            break # be explicit
 
 
 def upload_data_to_endpoint(local_stop_signal):
@@ -398,7 +399,7 @@ def embodied_co2eq_g(time_delta_seconds: int):
         logging.error("Embodied carbon data not found")
         return 0
 
-    with open(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json')) as f:
+    with open(os.path.join(SCRIPT_DIR, 'mac_embodied_carbon.json'), encoding='utf-8') as f:
         embodied_co2eq_data = json.load(f)
 
     embodied_co2eq = embodied_co2eq_data.get(mac_model, None)
@@ -879,8 +880,8 @@ if __name__ == '__main__':
     ticker_thread.start()
     logging.debug('Ticker thread started')
 
-    db_checker_thread = threading.Thread(target=optimize_DB, args=(stop_signal,), daemon=True)
-    db_checker_thread.start()
+    optimize_db_thread = threading.Thread(target=optimize_DB, args=(stop_signal,), daemon=True)
+    optimize_db_thread.start()
     logging.debug('DB optimizer thread started')
 
 

@@ -240,7 +240,7 @@ def upload_data_to_endpoint(local_stop_signal):
         try:
             start_time = time.time()
             with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 204:
+                if response.status == 202:
                     for p in payload:
                         tc.execute('DELETE FROM measurements WHERE id = ?;', (p['row_id'],))
                     thread_conn.commit()
